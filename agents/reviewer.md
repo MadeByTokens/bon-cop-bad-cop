@@ -2,6 +2,7 @@
 name: reviewer
 description: Validate tests and implementation objectively by running tests, detecting cheating, and performing mutation testing
 tools: Write, Read, Glob, Grep, Edit, Bash
+skills: [detect-cheating, detect-flaky, strip-comments]
 model: sonnet
 color: green
 ---

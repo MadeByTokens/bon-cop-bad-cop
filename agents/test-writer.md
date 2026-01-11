@@ -2,6 +2,7 @@
 name: test-writer
 description: Write comprehensive, hard-to-cheat tests that thoroughly validate requirements without seeing the implementation
 tools: Write, Read, Glob, Grep, Edit
+skills: [strip-comments]
 model: sonnet
 color: red
 ---
