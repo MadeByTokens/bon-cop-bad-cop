@@ -59,13 +59,38 @@ Here are simple requirements to test the plugin, ordered by complexity:
 | `/bon-cop-bad-cop:tdd-loop "requirement"` | Start new TDD loop |
 | `/bon-cop-bad-cop:tdd-status` | Check current loop status |
 | `/bon-cop-bad-cop:cancel-tdd` | Cancel active loop |
+| `/bon-cop-bad-cop:help` | Display plugin help and usage |
 
 ### Options for tdd-loop
 
+- `--requirement-file path/to/file.md` - Load requirement from markdown file
 - `--max-iterations N` - Maximum iterations (default: 15)
 - `--mutation-threshold 0.85` - Required mutation score (default: 0.8)
 - `--test-scope unit|integration|both` - Test scope (default: unit)
 - `--language python|javascript|rust` - Force language (default: auto-detect)
+
+### Using a Requirement File
+
+For complex requirements, create a markdown file and use `--requirement-file`:
+
+```bash
+# Create a requirement file with detailed specs
+cat > requirement.md << 'EOF'
+Write a function `calculate_tax(income, deductions)` that:
+- Accepts income as a positive number
+- Accepts deductions as a list of {amount, category} objects
+- Returns the tax owed based on progressive brackets
+- Handles edge cases: zero income, negative values, empty deductions
+EOF
+
+# Run TDD loop with the file
+/bon-cop-bad-cop:tdd-loop --requirement-file requirement.md
+
+# Or combine with inline notes for run-specific tweaks
+/bon-cop-bad-cop:tdd-loop "Focus on edge cases, ignore performance" --requirement-file requirement.md
+```
+
+When both are provided, the inline text is appended as "Additional Notes" to the file content.
 
 ## How It Works
 

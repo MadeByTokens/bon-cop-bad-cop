@@ -5,16 +5,48 @@ allowed-tools: Write, Read, Glob, Edit, Bash, Task, TodoWrite
 
 # /tdd-loop Command
 
-When the user runs `/tdd-loop "<requirement>" [options]`, follow these instructions:
+When the user runs `/tdd-loop "<requirement>" [options]` or `/tdd-loop --requirement-file <path> [options]`, follow these instructions:
 
 ## Step 1: Parse User Input
 
 Extract from the command:
-- **requirement** (required): The user's feature description
+- **requirement** (optional): The user's feature description as inline text
+- **--requirement-file** (optional): Path to a markdown file containing the requirement
 - **--max-iterations** (optional, default: 15): Maximum loop iterations
 - **--mutation-threshold** (optional, default: 0.8): Required mutation score (0.0-1.0)
 - **--test-scope** (optional, default: "unit"): Test scope (unit/integration/both)
 - **--language** (optional, default: auto-detect): Target language
+
+**Requirement source rules:**
+- At least one of: inline requirement OR `--requirement-file` must be provided
+- If neither is provided, display error: "⚠️ No requirement specified. Provide a quoted requirement or use --requirement-file <path>." and STOP
+- Both can be used together: file content becomes the main requirement, inline text is appended as additional notes
+
+**If `--requirement-file` is specified:**
+1. Display: "📄 Loading requirement from: <filepath>"
+2. Check if the file exists using the Read tool
+3. **If the file does not exist or cannot be read:**
+   - Display error: "❌ File not found: <filepath>"
+   - Display: "Please check the path and try again."
+   - STOP - do not continue
+4. Read the file content
+5. **If the file is empty:**
+   - Display error: "❌ Requirement file is empty: <filepath>"
+   - STOP - do not continue
+6. Display: "✅ Requirement loaded (<N> characters)"
+
+**Combining file and inline requirements:**
+If BOTH `--requirement-file` AND inline text are provided, combine them as follows:
+
+```
+<file content>
+
+---
+**Additional Notes:**
+<inline text>
+```
+
+Display: "📝 Added inline notes to requirement"
 
 ## Step 2: Check for Existing Loop
 
