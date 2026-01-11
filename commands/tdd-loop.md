@@ -1,6 +1,6 @@
 ---
 description: Start adversarial TDD loop with three agents
-allowed-tools: Write, Read, Glob, Edit, Bash, Task, TodoWrite
+allowed-tools: Write, Read, Glob, Edit, Bash, Task, TodoWrite, Skill
 ---
 
 # /tdd-loop Command
