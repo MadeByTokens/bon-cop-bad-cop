@@ -6,7 +6,17 @@ Three-agent adversarial TDD loop: Test Writer (bad cop), Code Writer (suspect), 
 
 ## Installation
 
+### Option A: Via MadeByTokens Marketplace (Recommended)
+
 See https://github.com/MadeByTokens/claude-code-plugins-madebytokens
+
+### Option B: Direct Install
+
+```bash
+# Clone and install directly
+git clone https://github.com/MadeByTokens/bon-cop-bad-cop.git
+/plugin install ./bon-cop-bad-cop
+```
 
 ## Quick Start
 
@@ -182,30 +192,23 @@ flowchart LR
 
 ## Repository Structure
 
-This repository is structured as a Claude Code plugin marketplace:
-
 ```
 bon-cop-bad-cop/
 ├── .claude-plugin/
-│   └── marketplace.json      # Marketplace manifest
-│
-├── plugins/
-│   └── bon-cop-bad-cop/      # The plugin
-│       ├── .claude-plugin/
-│       │   └── plugin.json   # Plugin manifest
-│       ├── agents/           # Agent definitions
-│       │   ├── test-writer.md
-│       │   ├── code-writer.md
-│       │   └── reviewer.md
-│       ├── commands/         # Slash commands
-│       │   ├── tdd-loop.md
-│       │   ├── cancel-tdd.md
-│       │   └── tdd-status.md
-│       └── tools/            # Helper scripts
-│           ├── detect_cheating.py
-│           ├── detect_flaky.py
-│           └── strip_comments.py
-│
+│   └── plugin.json           # Plugin manifest
+├── agents/                   # Agent definitions
+│   ├── test-writer.md
+│   ├── code-writer.md
+│   └── reviewer.md
+├── commands/                 # Slash commands
+│   ├── tdd-loop.md
+│   ├── tdd-status.md
+│   ├── cancel-tdd.md
+│   └── help.md
+├── tools/                    # Helper scripts
+│   ├── detect_cheating.py
+│   ├── detect_flaky.py
+│   └── strip_comments.py
 ├── README.md
 └── QUICKSTART.md
 ```
@@ -316,16 +319,15 @@ Make sure the plugin is installed:
 # Check installed plugins
 /plugin list
 
-# If not installed, add marketplace and install:
-/plugin marketplace add /path/to/bon-cop-bad-cop
-/plugin install bon-cop-bad-cop@bon-cop-bad-cop-marketplace
+# If not installed:
+/plugin install /path/to/bon-cop-bad-cop
 ```
 
 ### Loop stops after first agent
 
 This is expected if the Task tool invocations aren't working correctly. Check:
 - `.tdd-state.json` has `"active": true`
-- All agent files exist in `plugins/bon-cop-bad-cop/agents/`
+- All agent files exist in `agents/`
 - Run `/bon-cop-bad-cop:tdd-status` to see current state
 
 ### Tests not running / Mutation testing skipped
