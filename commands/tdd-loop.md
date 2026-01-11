@@ -48,6 +48,66 @@ If BOTH `--requirement-file` AND inline text are provided, combine them as follo
 
 Display: "📝 Added inline notes to requirement"
 
+## Step 1.5: Detect and Confirm Language
+
+If `--language` was provided by the user, use that value directly and skip to Step 2.
+
+If `--language` was NOT provided, detect and confirm the language:
+
+### Auto-Detection Rules
+
+Scan the project root for these indicators using Glob:
+
+| Indicator Files | Language | Test Framework | Test Command |
+|-----------------|----------|----------------|--------------|
+| `pytest.ini`, `pyproject.toml`, `setup.py`, `test_*.py` | Python | pytest | `pytest -v` |
+| `jest.config.*`, `*.test.js`, `*.spec.js`, `package.json` (with jest) | JavaScript | Jest | `npx jest --verbose` |
+| `vitest.config.*`, `*.test.ts`, `*.spec.ts` | TypeScript | Vitest | `npx vitest run` |
+| `Cargo.toml` | Rust | cargo test | `cargo test` |
+| `go.mod`, `*_test.go` | Go | go test | `go test -v ./...` |
+| `pom.xml`, `build.gradle` | Java | JUnit | `mvn test -q` |
+| `Gemfile`, `*_spec.rb` | Ruby | RSpec | `bundle exec rspec` |
+
+### Confirmation with User
+
+Use **AskUserQuestion** to confirm the language:
+
+**If exactly ONE language detected:**
+```
+Question: "Detected [Language] project. Use this for the TDD loop?"
+Header: "Language"
+Options:
+  1. "[Language] (Recommended)" - Use detected language
+  2. "Choose different language" - Show full language list
+```
+
+**If MULTIPLE languages detected:**
+```
+Question: "Multiple languages detected in project. Which should be used for this TDD loop?"
+Header: "Language"
+Options: [List each detected language] + "Other"
+```
+
+**If NO language detected:**
+```
+Question: "No project language detected. Which language should be used?"
+Header: "Language"
+Options:
+  1. "Python"
+  2. "JavaScript/TypeScript"
+  3. "Rust"
+  4. "Go"
+```
+
+### Store Language Configuration
+
+After confirmation, store these values for use throughout the loop:
+- `language`: The confirmed language name (e.g., "python", "javascript", "rust")
+- `testFramework`: The corresponding test framework (e.g., "pytest", "jest", "cargo")
+- `testCommand`: The command to run tests (e.g., "pytest -v", "npx jest --verbose")
+
+Display: "✅ Language confirmed: [Language] (using [testFramework])"
+
 ## Step 2: Check for Existing Loop
 
 **IMPORTANT:** First, provide feedback that you're checking:
@@ -72,7 +132,9 @@ Create `.tdd-state.json` with this structure:
   "maxIterations": <parsed or 15>,
   "mutationThreshold": <parsed or 0.8>,
   "testScope": "<parsed or 'unit'>",
-  "language": "<parsed or null>",
+  "language": "<confirmed language from Step 1.5>",
+  "testFramework": "<corresponding test framework>",
+  "testCommand": "<command to run tests>",
   "testFiles": {},
   "implFiles": {},
   "lastVerdict": null,
@@ -100,6 +162,7 @@ Output:
 ✓ Loop initialized
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Requirement: <requirement>
+Language: <language> (<testFramework>)
 Max Iterations: <maxIterations>
 Mutation Threshold: <mutationThreshold * 100>%
 Test Scope: <testScope>
@@ -145,14 +208,24 @@ You are the Test Writer in iteration <iteration> of the Bon Cop Bad Cop TDD loop
 **Requirement:** <requirement from state>
 **Test Scope:** <testScope>
 
+**Language:** <language from state>
+**Test Framework:** <testFramework from state>
+
 Your task:
 1. Create comprehensive test files for this requirement
 2. Include anti-cheating tests (random values, property-based tests)
 3. Include edge cases and boundary conditions
-4. Write tests in the appropriate language (detect from project or use Python)
+4. Write tests in the confirmed language using the specified test framework
 
 When done:
-1. Save your test file(s) to disk (e.g., test_<name>.py)
+1. Save your test file(s) to disk using language conventions:
+   - Python: `test_<name>.py`
+   - JavaScript: `<name>.test.js` or `<name>.spec.js`
+   - TypeScript: `<name>.test.ts` or `<name>.spec.ts`
+   - Rust: `src/<name>.rs` with `#[cfg(test)]` module
+   - Go: `<name>_test.go`
+   - Java: `<Name>Test.java`
+   - Ruby: `<name>_spec.rb`
 2. Update .tdd-state.json:
    - Set `testFiles` to include your test files (key: filename, value: content)
    - Set `phase` to "WRITING_CODE"
@@ -185,6 +258,7 @@ You are the Code Writer in iteration <iteration> of the Bon Cop Bad Cop TDD loop
 
 **IMPORTANT:** You do NOT see the original requirement. You must implement based ONLY on the tests.
 
+**Language:** <language from state>
 **Test files to implement against:**
 <List test files from state>
 
@@ -216,12 +290,14 @@ You are the Reviewer in iteration <iteration> of the Bon Cop Bad Cop TDD loop.
 
 **Original Requirement:** <requirement>
 **Mutation Threshold:** <mutationThreshold>
+**Language:** <language from state>
+**Test Command:** <testCommand from state>
 
 **Test files:** <list from testFiles>
 **Implementation files:** <list from implFiles>
 
 Your task:
-1. Run the tests and check they pass
+1. Run the tests using the test command and check they pass
 2. Check for flaky tests (run multiple times if needed)
 3. Check for cheating in implementation (hardcoded values, lookup tables)
 4. Run mutation testing if available
@@ -299,7 +375,15 @@ If any agent fails or state becomes corrupted:
 ```
 User: /bon-cop-bad-cop:tdd-loop "Write a function add(a, b) that returns the sum"
 
-Claude: 🔍 Checking for existing TDD loops...
+Claude: 🔍 Scanning project for language indicators...
+
+        [Uses AskUserQuestion]
+        Question: "Detected Python project. Use this for the TDD loop?"
+        User selects: "Python (Recommended)"
+
+        ✅ Language confirmed: Python (using pytest)
+
+        🔍 Checking for existing TDD loops...
         ✅ No active loops found. Initializing new TDD loop...
         ✅ State file created: .tdd-state.json
 

@@ -27,7 +27,8 @@ Three-agent adversarial TDD loop where agents keep each other honest.
         --max-iterations N       Max loop iterations (default: 15)
         --mutation-threshold X   Required mutation score 0.0-1.0 (default: 0.8)
         --test-scope SCOPE       unit | integration | both (default: unit)
-        --language LANG          python | javascript | rust (default: auto)
+        --language LANG          Override auto-detection (python, javascript,
+                                 typescript, rust, go, java, ruby)
 
   /bon-cop-bad-cop:tdd-status
       Check the current TDD loop status and progress.

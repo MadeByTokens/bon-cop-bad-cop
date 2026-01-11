@@ -39,6 +39,8 @@ This isolation is intentional. Focus on writing the best tests for the requireme
 ## Anti-Cheating Strategies
 
 ### Prevent Hardcoded Returns
+
+**Python:**
 ```python
 # BAD: Single test case allows hardcoding
 def test_add():
@@ -50,13 +52,54 @@ def test_add():
     assert add(0, 0) == 0
     assert add(-5, 5) == 0
     assert add(100, 200) == 300
-    # Use random/generated values when appropriate
+```
+
+**JavaScript/TypeScript:**
+```javascript
+// BAD: Single test case allows hardcoding
+test('add', () => { expect(add(2, 3)).toBe(5); });
+
+// GOOD: Multiple cases make hardcoding impractical
+test.each([
+  [2, 3, 5], [0, 0, 0], [-5, 5, 0], [100, 200, 300]
+])('add(%i, %i) = %i', (a, b, expected) => {
+  expect(add(a, b)).toBe(expected);
+});
+```
+
+**Rust:**
+```rust
+// GOOD: Multiple cases make hardcoding impractical
+#[test]
+fn test_add() {
+    assert_eq!(add(2, 3), 5);
+    assert_eq!(add(0, 0), 0);
+    assert_eq!(add(-5, 5), 0);
+    assert_eq!(add(100, 200), 300);
+}
+```
+
+**Go:**
+```go
+// GOOD: Table-driven tests
+func TestAdd(t *testing.T) {
+    cases := []struct{ a, b, want int }{
+        {2, 3, 5}, {0, 0, 0}, {-5, 5, 0}, {100, 200, 300},
+    }
+    for _, c := range cases {
+        if got := add(c.a, c.b); got != c.want {
+            t.Errorf("add(%d, %d) = %d, want %d", c.a, c.b, got, c.want)
+        }
+    }
+}
 ```
 
 ### Prevent Lookup Tables
+
+Include enough variety that a lookup table is impractical. Include property-based checks:
+
+**Python:**
 ```python
-# Include enough variety that a lookup table is impractical
-# Include property-based checks
 def test_add_commutative():
     for a, b in [(1,2), (5,10), (-3,7), (0,99)]:
         assert add(a, b) == add(b, a)
@@ -66,14 +109,49 @@ def test_add_identity():
         assert add(x, 0) == x
 ```
 
+**JavaScript/TypeScript:**
+```javascript
+test('add is commutative', () => {
+  [[1,2], [5,10], [-3,7], [0,99]].forEach(([a, b]) => {
+    expect(add(a, b)).toBe(add(b, a));
+  });
+});
+```
+
+**Rust:**
+```rust
+#[test]
+fn test_add_commutative() {
+    for (a, b) in [(1, 2), (5, 10), (-3, 7), (0, 99)] {
+        assert_eq!(add(a, b), add(b, a));
+    }
+}
+```
+
 ### Prevent Trivial Implementations
+
+**Python:**
 ```python
-# Test that it actually does something
 def test_sort_actually_sorts():
     assert sort([3,1,2]) == [1,2,3]
-    assert sort([5,4,3,2,1]) == [1,2,3,4,5]
-    # Verify it's not just returning input
-    assert sort([3,1,2]) != [3,1,2]
+    assert sort([3,1,2]) != [3,1,2]  # Verify it's not just returning input
+```
+
+**JavaScript/TypeScript:**
+```javascript
+test('sort actually sorts', () => {
+  expect(sort([3,1,2])).toEqual([1,2,3]);
+  expect(sort([3,1,2])).not.toEqual([3,1,2]);
+});
+```
+
+**Rust:**
+```rust
+#[test]
+fn test_sort_actually_sorts() {
+    assert_eq!(sort(vec![3,1,2]), vec![1,2,3]);
+    assert_ne!(sort(vec![3,1,2]), vec![3,1,2]);
+}
 ```
 
 ## Test Structure
@@ -104,19 +182,42 @@ Always output complete, runnable test files. Include:
 
 Your tests will be run 3 times before mutation testing. **Any inconsistent results = automatic rejection.**
 
-**DO:**
+### DO: Use Seeded Randomness
+
+**Python:**
 ```python
-# Seeded randomness
 import random
 random.seed(42)
 test_values = [random.randint(0, 100) for _ in range(10)]
+```
 
-# Explicit timeouts with generous margins
-@pytest.mark.timeout(5)
-def test_slow_operation():
-    ...
+**JavaScript/TypeScript:**
+```javascript
+// Use a seeded random library like 'seedrandom'
+import seedrandom from 'seedrandom';
+const rng = seedrandom('42');
+const testValues = Array.from({length: 10}, () => Math.floor(rng() * 100));
+```
 
-# Isolated test state
+**Rust:**
+```rust
+use rand::{Rng, SeedableRng};
+let mut rng = rand::rngs::StdRng::seed_from_u64(42);
+let test_values: Vec<i32> = (0..10).map(|_| rng.gen_range(0..100)).collect();
+```
+
+**Go:**
+```go
+import "math/rand"
+rand.Seed(42)
+testValues := make([]int, 10)
+for i := range testValues { testValues[i] = rand.Intn(100) }
+```
+
+### DO: Use Isolated Test State
+
+**Python:**
+```python
 @pytest.fixture
 def fresh_database():
     db = create_test_db()
@@ -124,27 +225,26 @@ def fresh_database():
     db.cleanup()
 ```
 
-**DON'T:**
-```python
-# Unseeded randomness - FLAKY!
-def test_random():
-    x = random.randint(0, 100)
-    assert process(x) > 0
-
-# Timing-dependent - FLAKY!
-def test_cache():
-    result1 = get_cached()
-    time.sleep(0.001)  # Race condition!
-    result2 = get_cached()
-    assert result1 == result2
-
-# Order-dependent - FLAKY!
-shared_state = []
-def test_first():
-    shared_state.append(1)
-def test_second():
-    assert len(shared_state) == 1  # Depends on test_first!
+**JavaScript/TypeScript:**
+```javascript
+beforeEach(() => { db = createTestDb(); });
+afterEach(() => { db.cleanup(); });
 ```
+
+**Rust:**
+```rust
+#[fixture]
+fn fresh_database() -> TestDb {
+    TestDb::new()
+}
+```
+
+### DON'T: Avoid These Patterns
+
+- **Unseeded randomness** - Results vary between runs
+- **Timing-dependent tests** - Race conditions cause flakiness
+- **Shared mutable state** - Tests affect each other
+- **Order-dependent tests** - Results depend on execution order
 
 ## Success Criteria
 

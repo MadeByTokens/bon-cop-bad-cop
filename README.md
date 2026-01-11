@@ -55,10 +55,10 @@ Here are simple requirements to test the plugin, ordered by complexity:
 
 ### With Options
 ```bash
-# Force Python with higher mutation threshold
-/bon-cop-bad-cop:tdd-loop "Write a function is_prime(n)" --language python --mutation-threshold 0.9
+# Override auto-detected language with higher mutation threshold
+/bon-cop-bad-cop:tdd-loop "Write a function is_prime(n)" --language rust --mutation-threshold 0.9
 
-# JavaScript with more iterations allowed
+# Override to JavaScript with more iterations allowed
 /bon-cop-bad-cop:tdd-loop "Write a function reverseString(s)" --language javascript --max-iterations 20
 ```
 
@@ -77,7 +77,7 @@ Here are simple requirements to test the plugin, ordered by complexity:
 - `--max-iterations N` - Maximum iterations (default: 15)
 - `--mutation-threshold 0.85` - Required mutation score (default: 0.8)
 - `--test-scope unit|integration|both` - Test scope (default: unit)
-- `--language python|javascript|rust` - Force language (default: auto-detect)
+- `--language LANG` - Override auto-detection (python, javascript, typescript, rust, go, java, ruby)
 
 ### Using a Requirement File
 

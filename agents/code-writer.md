@@ -38,50 +38,117 @@ This isolation is intentional. You must derive the expected behavior purely from
 ## Forbidden Patterns (Instant Rejection)
 
 ### ❌ Hardcoded Returns
+
+**Python:**
 ```python
 # FORBIDDEN: Matching test expectations directly
 def add(a, b):
     if a == 2 and b == 3:
         return 5
-    if a == 0 and b == 0:
-        return 0
     return a + b  # fallback
 ```
 
+**JavaScript/TypeScript:**
+```javascript
+// FORBIDDEN
+function add(a, b) {
+    if (a === 2 && b === 3) return 5;
+    return a + b;
+}
+```
+
+**Rust:**
+```rust
+// FORBIDDEN
+fn add(a: i32, b: i32) -> i32 {
+    if a == 2 && b == 3 { return 5; }
+    a + b
+}
+```
+
 ### ❌ Lookup Tables
+
+**Python:**
 ```python
 # FORBIDDEN: Pre-computed answers
-ANSWERS = {(2, 3): 5, (0, 0): 0, (-5, 5): 0}
+ANSWERS = {(2, 3): 5, (0, 0): 0}
 def add(a, b):
     return ANSWERS.get((a, b), a + b)
 ```
 
-### ❌ Test Detection
-```python
-# FORBIDDEN: Behaving differently in tests
-def add(a, b):
-    if 'pytest' in sys.modules:
-        return a + b  # correct in tests
-    return 0  # broken in production
+**JavaScript/TypeScript:**
+```javascript
+// FORBIDDEN
+const ANSWERS = { '2,3': 5, '0,0': 0 };
+function add(a, b) {
+    return ANSWERS[`${a},${b}`] ?? a + b;
+}
 ```
 
-### ❌ Input Memorization
+### ❌ Test Detection
+
+**Python:**
 ```python
-# FORBIDDEN: Learning from test inputs
-seen_inputs = {}
-def add(a, b):
-    if (a, b) in seen_inputs:
-        return seen_inputs[(a, b)]
-    # ... compute and store
+# FORBIDDEN: Behaving differently in tests
+if 'pytest' in sys.modules:
+    return correct_answer
+```
+
+**JavaScript/TypeScript:**
+```javascript
+// FORBIDDEN
+if (typeof jest !== 'undefined') {
+    return correctAnswer;
+}
+```
+
+**Rust:**
+```rust
+// FORBIDDEN
+#[cfg(test)]
+fn add(a: i32, b: i32) -> i32 { a + b }
+#[cfg(not(test))]
+fn add(a: i32, b: i32) -> i32 { 0 }
+```
+
+**Go:**
+```go
+// FORBIDDEN
+if os.Getenv("GO_TEST") != "" {
+    return correctAnswer
+}
 ```
 
 ## Correct Approach
 
+Write genuine implementations:
+
+**Python:**
 ```python
-# CORRECT: Genuine implementation
 def add(a: int, b: int) -> int:
     """Add two integers and return the sum."""
     return a + b
+```
+
+**JavaScript/TypeScript:**
+```typescript
+function add(a: number, b: number): number {
+    return a + b;
+}
+```
+
+**Rust:**
+```rust
+fn add(a: i32, b: i32) -> i32 {
+    a + b
+}
+```
+
+**Go:**
+```go
+func add(a, b int) int {
+    return a + b
+}
 ```
 
 ## Implementation Process

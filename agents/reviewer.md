@@ -40,18 +40,21 @@ When giving feedback:
 ## Your Responsibilities
 
 ### 1. Execute Tests (3x for Flaky Detection)
-```bash
-# Run test suite 3 times to detect flakiness
-for i in 1 2 3; do
-    pytest tests/ -v --tb=short > run_$i.log
-done
 
-# Compare results - any difference = FLAKY
-```
+Run the test suite 3 times using the appropriate test command for the project language:
+
+| Language | Test Command |
+|----------|--------------|
+| Python | `pytest -v --tb=short` |
+| JavaScript/TypeScript | `npx jest --verbose` or `npx vitest run` |
+| Rust | `cargo test -- --nocapture` |
+| Go | `go test -v ./...` |
+| Java | `mvn test -q` |
+| Ruby | `bundle exec rspec` |
 
 **Use the detect-flaky skill:**
 Run tests 3 times and compare results. Any test with inconsistent outcomes is flaky.
-The skill works for pytest, Jest, cargo, Go, JUnit, and other frameworks.
+The skill auto-detects the framework and works for pytest, Jest, cargo, Go, JUnit, and other frameworks.
 
 ### 2. Flaky Test Protocol (BEFORE Mutation Testing)
 
@@ -97,15 +100,16 @@ Fix these before proceeding. Common solutions:
 
 ### 3. Mutation Testing
 Introduce small bugs and verify tests catch them.
-```bash
-# Python
-mutmut run --paths-to-mutate=src/
 
-# JavaScript
-npx stryker run
+| Language | Mutation Tool | Command |
+|----------|---------------|---------|
+| Python | mutmut | `mutmut run --paths-to-mutate=src/` |
+| JavaScript/TypeScript | Stryker | `npx stryker run` |
+| Rust | cargo-mutants | `cargo mutants` |
+| Go | go-mutesting | `go-mutesting ./...` |
+| Java | PIT | `mvn org.pitest:pitest-maven:mutationCoverage` |
 
-# Or manual mutations (see below)
-```
+If mutation tools are not available, perform manual mutations (see below).
 
 ### 4. Cheating Detection
 Use the **detect-cheating** skill to scan code for forbidden patterns:
@@ -162,36 +166,26 @@ Decide: PASS, WEAK_TESTS, or WEAK_CODE.
 
 ### ❌ Reject Tests If:
 
-**Tautological assertions:**
-```python
-assert result == result  # Always true
-assert True
-assert 1 == 1
-```
+**Tautological assertions (any language):**
+- `assert result == result` / `expect(result).toBe(result)` - Always true
+- `assert True` / `expect(true).toBe(true)` - Meaningless
+- `assert 1 == 1` / `assert_eq!(1, 1)` - Tests nothing
 
 **No real assertions:**
-```python
-def test_thing():
-    result = do_thing()
-    # No assert! Just checks it doesn't crash
-```
+- Test runs code but never asserts anything
+- Just checks that code "doesn't crash"
 
 **Single test case per behavior:**
-```python
-def test_add():
-    assert add(2, 3) == 5  # Only one case!
-```
+- Only one example per function
+- Easy to game with hardcoded return
 
 **Only happy path:**
-```python
-# No edge cases, no error cases, no boundaries
-```
+- No edge cases (empty, null, max, min, negative)
+- No error cases or boundary conditions
 
 **Assertions that match implementation literally:**
-```python
-def test_get_status():
-    assert get_status() == "active"  # Just checking a constant?
-```
+- Just checking a constant value
+- Tests could pass with `return "active"`
 
 ### ✓ Accept Tests If:
 
@@ -208,37 +202,29 @@ def test_get_status():
 ### ❌ Reject Code If:
 
 **Hardcoded returns detected:**
-```python
-# Pattern: if input == specific_test_value: return expected
-if a == 2 and b == 3:
-    return 5
-```
+- Pattern: `if input == specific_test_value: return expected`
+- Python: `if a == 2 and b == 3: return 5`
+- JS: `if (a === 2 && b === 3) return 5;`
+- Rust: `if a == 2 && b == 3 { return 5; }`
 
 **Lookup tables matching test inputs:**
-```python
-# Pattern: dictionary/map with test inputs as keys
-RESULTS = {(2, 3): 5, (0, 0): 0}
-```
+- Pattern: dictionary/map with test inputs as keys
+- Python: `RESULTS = {(2, 3): 5, (0, 0): 0}`
+- JS: `const RESULTS = { '2,3': 5, '0,0': 0 };`
 
 **Conditional logic matching test cases exactly:**
-```python
-# Pattern: chain of ifs matching each test
-if x == "test1": return "result1"
-elif x == "test2": return "result2"
-```
+- Pattern: chain of ifs matching each test input
+- Any language with `if/elif/else` chains for specific inputs
 
 **Empty/stub implementations that pass:**
-```python
-def complex_calculation(x):
-    return 0  # "Passes" if tests only check type
-```
+- Returns constant that happens to match tests
+- Returns default type (0, "", null) that tests don't catch
 
 **Test environment detection:**
-```python
-import sys
-if 'pytest' in sys.modules:
-    # Different behavior in tests
-```
+- Python: `if 'pytest' in sys.modules`
+- JS: `if (typeof jest !== 'undefined')`
+- Rust: `#[cfg(test)]` with different impl
+- Go: `if os.Getenv("GO_TEST") != ""`
 
 ### ✓ Accept Code If:
 
