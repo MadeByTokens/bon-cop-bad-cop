@@ -215,12 +215,11 @@ bon-cop-bad-cop/
 │   ├── tdd-status.md
 │   ├── cancel-tdd.md
 │   └── help.md
-├── tools/                    # Helper scripts
-│   ├── detect_cheating.py
-│   ├── detect_flaky.py
-│   └── strip_comments.py
-├── README.md
-└── QUICKSTART.md
+├── skills/                   # Language-agnostic capabilities
+│   ├── detect-cheating/
+│   ├── detect-flaky/
+│   └── strip-comments/
+└── README.md
 ```
 
 ---
@@ -233,71 +232,41 @@ bon-cop-bad-cop/
 - **Flakiness Detection** - Runs tests multiple times
 - **State Persistence** - Loop state saved in `.tdd-state.json`
 
-## Helper Tools
+## Skills
 
-The `plugins/bon-cop-bad-cop/tools/` directory contains standalone utilities that enforce the adversarial integrity of the TDD loop. These can also be run independently outside the plugin.
+Skills are language-agnostic capabilities that Claude uses automatically. They work for Python, JavaScript, Java, C/C++, Rust, Go, and more.
 
-### detect_cheating.py
+### detect-cheating
 
-Scans implementation code for patterns indicating the Code Writer is "gaming" the tests rather than implementing genuine logic.
+Analyzes implementation code for patterns indicating the Code Writer is gaming tests rather than implementing genuine logic.
 
 **Patterns detected:**
 - Hardcoded returns matching test expectations
 - Lookup tables with test inputs as keys
-- Test environment detection (`pytest` in `sys.modules`, `CI` env vars)
-- Excessive conditional chains matching specific test cases
+- Test environment detection
+- Excessive conditional chains
 
-**Usage:**
-```bash
-# Human-readable output
-python tools/detect_cheating.py implementation.py test_implementation.py
-
-# JSON output for programmatic use
-python tools/detect_cheating.py implementation.py test_implementation.py --json
-```
-
-**Why it matters:** Without this, the Code Writer could pass all tests with `if input == 2: return 5` style cheating instead of real logic.
+**Why it matters:** Without this, the Code Writer could pass all tests with `if input == 2: return 5` style cheating.
 
 ---
 
-### detect_flaky.py
+### detect-flaky
 
-Runs test suites multiple times to identify non-deterministic tests. Flaky tests must be fixed before mutation testing can provide meaningful results.
+Runs test suites multiple times to identify non-deterministic tests.
 
-**Supported frameworks:** pytest, Jest, Cargo (auto-detected)
+**Supported:** pytest, Jest, Cargo, Go, JUnit (auto-detected)
 
-**Usage:**
-```bash
-# Run tests 3 times (default), auto-detect framework
-python tools/detect_flaky.py tests/
-
-# Run 5 times with explicit framework
-python tools/detect_flaky.py tests/ --runs 5 --framework pytest
-
-# JSON output
-python tools/detect_flaky.py tests/ --json
-```
-
-**Why it matters:** A flaky test that passes 2/3 times will cause false positives in mutation testing and waste iterations.
+**Why it matters:** A flaky test will cause false positives in mutation testing.
 
 ---
 
-### strip_comments.py
+### strip-comments
 
-Removes comments and docstrings from test files before the Code Writer sees them. This is a key anti-collusion measure.
+Removes comments and docstrings from test files before Code Writer sees them.
 
-**Supported languages:** Python, JavaScript/TypeScript
+**Supported:** Python, JavaScript, Java, C/C++, Rust, Go, HTML, CSS, and more.
 
-**Usage:**
-```bash
-# Print stripped code to stdout
-python tools/strip_comments.py test_example.py
-
-# Write to file
-python tools/strip_comments.py test_example.py test_example_stripped.py
-```
-
-**Why it matters:** The Code Writer should derive intent from test *behavior*, not from explanatory comments. If the Test Writer writes `# should handle negative numbers`, the Code Writer might just add a negative number check without understanding why. Stripping comments forces the Code Writer to understand the tests through their assertions.
+**Why it matters:** Code Writer derives intent from test *behavior*, not explanatory comments.
 
 ---
 

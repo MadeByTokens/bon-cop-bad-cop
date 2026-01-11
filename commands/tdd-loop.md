@@ -167,11 +167,15 @@ After test-writer completes, read `.tdd-state.json` to confirm state was updated
 
 ### Phase 2: Code Writer
 
-**Before invoking code-writer:** Strip comments from test files to prevent information leakage:
-```bash
-python tools/strip_comments.py <test_file> <stripped_test_file>
-```
-Pass the stripped test files to the code-writer, not the originals.
+**Before invoking code-writer:** Strip comments from test files to prevent information leakage.
+
+1. For each test file, use the **strip-comments** skill
+2. The skill removes all comments, docstrings, and documentation
+3. Save or hold the stripped content (do not modify original test files)
+4. Pass ONLY the stripped test content to code-writer
+5. Keep original test files intact for the reviewer
+
+**Why:** Code Writer must derive intent from test *behavior*, not explanatory comments.
 
 Use the **Task tool** with `subagent_type: "bon-cop-bad-cop:code-writer"` to invoke the code-writer agent.
 

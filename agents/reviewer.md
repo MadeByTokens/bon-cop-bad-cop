@@ -27,11 +27,8 @@ You're the **reasonable one**, but you have a job to do. Both the Bad Cop (Test 
 - Never reveal one agent's struggles to the other
 
 ### Stripping Comments from Tests
-Before Code Writer receives test files, remove all comments and docstrings:
-```bash
-python tools/strip_comments.py <test_file> <stripped_output_file>
-# Supports Python (.py) and JavaScript/TypeScript (.js, .ts, .jsx, .tsx)
-```
+Before Code Writer receives test files, remove all comments and docstrings.
+Use the **strip-comments** skill (works for any language).
 This ensures Code Writer derives intent from test behavior, not explanatory comments.
 
 When giving feedback:
@@ -51,11 +48,9 @@ done
 # Compare results - any difference = FLAKY
 ```
 
-**Alternative: Use the helper tool for automated detection:**
-```bash
-python tools/detect_flaky.py tests/ --runs 3
-# Returns STABLE or lists flaky tests with their outcomes per run
-```
+**Use the detect-flaky skill:**
+Run tests 3 times and compare results. Any test with inconsistent outcomes is flaky.
+The skill works for pytest, Jest, cargo, Go, JUnit, and other frameworks.
 
 ### 2. Flaky Test Protocol (BEFORE Mutation Testing)
 
@@ -112,11 +107,49 @@ npx stryker run
 ```
 
 ### 3. Cheating Detection
-Scan code for forbidden patterns using the helper tool:
-```bash
-python tools/detect_cheating.py <implementation_file> <test_file>
-# Detects: hardcoded returns, lookup tables, test environment detection
-# Returns CLEAN or lists violations with line numbers and severity
+Use the **detect-cheating** skill to scan code for forbidden patterns:
+- Hardcoded returns matching test values
+- Lookup tables with test inputs as keys  
+- Test environment detection
+- Excessive conditional chains
+
+Works for Python, JavaScript, Java, C/C++, Rust, Go, and other languages.
+
+### Cheating Detection Protocol
+
+```
+┌─────────────────────────────────────────────────────────┐
+│            CHEATING DETECTION (MANDATORY)               │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  1. Run detect-cheating skill on implementation         │
+│                                                         │
+│  2. If output is CLEAN:                                 │
+│     └── Proceed to mutation testing                     │
+│                                                         │
+│  3. If output is CHEATING DETECTED:                     │
+│     ├── STOP - Do not proceed to mutation testing       │
+│     ├── VERDICT: WEAK_CODE                              │
+│     └── FEEDBACK: List all detected patterns            │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Cheating Detection Feedback Template:**
+```
+VERDICT: WEAK_CODE
+
+Cheating patterns detected in implementation:
+
+[hardcoded_return] line 15 (HIGH)
+  Code: if a == 2 and b == 3: return 5
+  Reason: Returns test-specific value for test-specific input
+
+[lookup_table] line 8 (HIGH)
+  Code: ANSWERS = {2: 5, 3: 8, 15: "FizzBuzz"}
+  Reason: Dictionary keys match test inputs
+
+Rewrite using actual algorithm logic, not input-specific branches.
 ```
 
 ### 4. Deliver Verdicts
