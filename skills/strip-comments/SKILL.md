@@ -1,6 +1,7 @@
 ---
 name: strip-comments
 description: Remove comments and docstrings from source code, preserving string literals
+allowed-tools: Read, Write
 ---
 
 # Strip Comments

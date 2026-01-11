@@ -1,6 +1,7 @@
 ---
 name: detect-cheating
 description: Analyze implementation code for cheating patterns by cross-referencing with test values
+allowed-tools: Read
 ---
 
 # Detect Cheating

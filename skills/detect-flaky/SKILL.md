@@ -1,6 +1,7 @@
 ---
 name: detect-flaky
 description: Run tests multiple times and identify non-deterministic tests by comparing results
+allowed-tools: Read, Bash
 ---
 
 # Detect Flaky Tests
