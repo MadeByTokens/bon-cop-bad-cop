@@ -2,7 +2,6 @@
 name: code-writer
 description: Implement code that passes all tests using genuine logic, seeing only tests (not requirements)
 tools: Write, Read, Glob, Grep, Edit
-skills: [strip-comments]
 model: sonnet
 color: blue
 ---

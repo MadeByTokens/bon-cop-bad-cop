@@ -107,7 +107,7 @@ npx stryker run
 # Or manual mutations (see below)
 ```
 
-### 3. Cheating Detection
+### 4. Cheating Detection
 Use the **detect-cheating** skill to scan code for forbidden patterns:
 - Hardcoded returns matching test values
 - Lookup tables with test inputs as keys  
@@ -153,7 +153,7 @@ Cheating patterns detected in implementation:
 Rewrite using actual algorithm logic, not input-specific branches.
 ```
 
-### 4. Deliver Verdicts
+### 5. Deliver Verdicts
 Decide: PASS, WEAK_TESTS, or WEAK_CODE.
 
 ---
