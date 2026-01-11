@@ -190,6 +190,16 @@ flowchart LR
 
 ---
 
+## Philosophy
+
+**Why adversarial?** Single-agent coding tends to "cheat" by writing tests that match the implementation rather than the spec. Three agents with different goals keep each other honest.
+
+**Why isolation?** If the Code Writer sees the requirement, it might implement shortcuts that pass tests but miss intent. By only seeing tests, it must implement *behavior*, not just keywords.
+
+**Why mutation testing?** Passing tests prove nothing if the tests themselves are weak. Mutation testing catches test suites that would pass broken code.
+
+---
+
 ## Repository Structure
 
 ```
