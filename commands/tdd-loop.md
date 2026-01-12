@@ -49,7 +49,7 @@ Every significant action MUST be logged with timestamp. Use the Write tool to ap
 
 **Example log:**
 ```
-[2024-01-15 10:30:00] [INIT] Bon Cop Bad Cop v0.5.5
+[2024-01-15 10:30:00] [INIT] Bon Cop Bad Cop v0.5.6
 [2024-01-15 10:30:00] [INIT] TDD loop started. Requirement: "Write a function is_prime(n) that returns True if n is prime"
 [2024-01-15 10:30:01] [INIT] Language detected: python (pytest)
 [2024-01-15 10:30:02] [INIT] State file created: .tdd-state.json
@@ -110,16 +110,35 @@ After EVERY agent completes, you MUST:
 
 **CRITICAL: Do NOT stop after an agent completes unless an exit condition is met.**
 
-## Step 0: Log Plugin Version
+## Step 0: Initialize and Log Version
 
-**FIRST**, before doing anything else:
+**FIRST**, before doing anything else, perform these actions IN ORDER:
 
-1. Log to `.tdd-loop.log`: `[INIT] Bon Cop Bad Cop v0.5.5`
-2. Display: "🎭 Bon Cop Bad Cop v0.5.5"
+### 0.1 Display Version
+Display to user: "🎭 Bon Cop Bad Cop v0.5.6"
 
-This ensures the version is always recorded for debugging purposes.
+### 0.2 Initialize Todo List (MANDATORY)
+**You MUST use TodoWrite immediately** to create the initial todo list:
 
-**Note:** When bumping the plugin version, update both `.claude-plugin/plugin.json` AND this file.
+```json
+[
+  {
+    "content": "TDD Loop: Initialize and start iteration 1",
+    "activeForm": "Initializing TDD loop",
+    "status": "in_progress"
+  },
+  {
+    "content": "TDD Loop: Continue until ALL_PASS or max iterations",
+    "activeForm": "Continuing TDD loop until completion",
+    "status": "pending"
+  }
+]
+```
+
+### 0.3 Log Version
+Log to `.tdd-loop.log`: `[INIT] Bon Cop Bad Cop v0.5.6`
+
+**Note:** When bumping the plugin version, update both `.claude-plugin/plugin.json` AND this file (Step 0.1 and 0.3).
 
 ## Step 1: Parse User Input
 
@@ -326,25 +345,30 @@ Use /tdd-status to check progress, /cancel-tdd to stop.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Initialize the todo list to track loop progress:**
+**CHECKPOINT: Before proceeding, verify:**
+- [ ] Todo list was created in Step 0.2
+- [ ] Version was logged to `.tdd-loop.log`
 
-Use TodoWrite with the following todos:
+**Update todo list** to mark initialization complete:
 ```json
 [
+  {
+    "content": "TDD Loop: Initialize and start iteration 1",
+    "activeForm": "Initializing TDD loop",
+    "status": "completed"
+  },
   {
     "content": "TDD Loop: Run iteration 1",
     "activeForm": "Running TDD iteration 1",
     "status": "in_progress"
   },
   {
-    "content": "TDD Loop: Check verdict and continue until ALL_PASS",
-    "activeForm": "Checking verdict and continuing loop",
+    "content": "TDD Loop: Continue until ALL_PASS or max iterations",
+    "activeForm": "Continuing TDD loop until completion",
     "status": "pending"
   }
 ]
 ```
-
-This todo list serves as a **forcing function** - the pending "Check verdict" task reminds you that the loop must continue until ALL_PASS or max iterations.
 
 ## Step 5: Run the TDD Loop
 
@@ -433,9 +457,16 @@ Your response must be brief (max 5 lines). Example:
 All verbose output goes to `.tdd-loop.log`, not your response.
 ```
 
-After test-writer completes, read `.tdd-state.json` to confirm state was updated.
+After test-writer completes:
 
-**CRITICAL: DO NOT STOP HERE. Immediately proceed to Phase 2 (Code Writer).**
+1. **Display progress to user:**
+   ```
+   ✅ Test Writer completed. Files: {testFilePaths}
+   ```
+
+2. **Read `.tdd-state.json`** to confirm state was updated
+
+3. **CRITICAL: DO NOT STOP HERE. Immediately proceed to Phase 2 (Code Writer).**
 
 ### Phase 2: Code Writer
 
@@ -515,9 +546,16 @@ Your response must be brief (max 5 lines). Example:
 All verbose output goes to `.tdd-loop.log`, not your response.
 ```
 
-After code-writer completes, read `.tdd-state.json` to confirm state was updated.
+After code-writer completes:
 
-**CRITICAL: DO NOT STOP HERE. Immediately proceed to Phase 3 (Reviewer).**
+1. **Display progress to user:**
+   ```
+   ✅ Code Writer completed. Files: {implFilePaths}
+   ```
+
+2. **Read `.tdd-state.json`** to confirm state was updated
+
+3. **CRITICAL: DO NOT STOP HERE. Immediately proceed to Phase 3 (Reviewer).**
 
 ### Phase 3: Reviewer
 
@@ -591,11 +629,25 @@ Your response must be brief (max 8 lines). Example:
 All verbose output (test logs, mutation survivors, detailed analysis) goes to `.tdd-loop.log`, not your response.
 ```
 
-After reviewer completes, read `.tdd-state.json` and check the verdict.
+After reviewer completes:
+
+1. **Display reviewer result to user:**
+   ```
+   ✅ Reviewer completed. Verdict: {lastVerdict}
+   ```
+
+2. **Read `.tdd-state.json`** and extract `lastVerdict`, `iteration`, `maxIterations`
+
+3. **Display verdict summary to user:**
+   ```
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   📋 Iteration {iteration} Result: {lastVerdict}
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ```
 
 ### After Reviewer - MANDATORY Loop Continuation
 
-**CRITICAL: You MUST check the verdict and continue the loop. DO NOT STOP unless exit condition is met.**
+**⚠️ CRITICAL: You MUST check the verdict and continue the loop. DO NOT STOP unless exit condition is met.**
 
 After reading the state file, follow this decision table:
 
@@ -620,9 +672,9 @@ After reading the state file, follow this decision table:
 
 **YOU MUST NOT STOP after the reviewer unless `lastVerdict` is `"ALL_PASS"` or `iteration > maxIterations`.**
 
-**Update the todo list based on verdict:**
+### 4. Update Todo List (MANDATORY)
 
-After checking the verdict, update the todos using TodoWrite:
+**You MUST use TodoWrite to update the todo list based on the verdict:**
 
 **If WEAK_TESTS or WEAK_CODE (continuing to next iteration):**
 ```json
@@ -686,6 +738,27 @@ After checking the verdict, update the todos using TodoWrite:
   }
 ]
 ```
+
+### 5. Continue the Loop (if not complete)
+
+**If verdict is WEAK_TESTS or WEAK_CODE:**
+
+1. **Display continuation message to user:**
+   ```
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   🔄 Continuing to iteration {next_iteration}/{maxIterations}
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ```
+
+2. **Increment iteration** in `.tdd-state.json`
+
+3. **GO BACK to the appropriate phase:**
+   - If WEAK_TESTS → Go to Phase 1 (test-writer)
+   - If WEAK_CODE → Go to Phase 2 (code-writer)
+
+4. **REPEAT the loop** until ALL_PASS or max iterations
+
+**DO NOT PROCEED TO STEP 6 unless the loop is truly complete (ALL_PASS or max iterations).**
 
 ## Step 6: Handle Loop Completion
 
