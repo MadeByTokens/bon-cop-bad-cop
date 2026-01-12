@@ -44,14 +44,16 @@ This ensures Code Writer derives intent from test behavior, not explanatory comm
 
 **How to strip comments (by language):**
 
-| Language | Remove | Keep |
-|----------|--------|------|
-| Python | `#` comments, `"""` docstrings | `#` inside strings |
-| JavaScript/TypeScript | `//`, `/* */`, `/** JSDoc */` | Inside strings, regex literals |
-| Rust | `//`, `/* */`, `///`, `//!` | Inside string literals |
-| Go | `//`, `/* */` | Inside strings and raw strings |
-| Java | `//`, `/* */`, `/** Javadoc */` | Inside string literals |
-| C/C++ | `//`, `/* */` | `#include`, `#define` directives |
+```
+| Language              | Remove                        | Keep                            |
+|-----------------------|-------------------------------|---------------------------------|
+| Python                | # comments, """ docstrings    | # inside strings                |
+| JavaScript/TypeScript | //, /* */, /** JSDoc */       | Inside strings, regex literals  |
+| Rust                  | //, /* */, ///, //!           | Inside string literals          |
+| Go                    | //, /* */                     | Inside strings and raw strings  |
+| Java                  | //, /* */, /** Javadoc */     | Inside string literals          |
+| C/C++                 | //, /* */                     | #include, #define directives    |
+```
 
 **Important:** Never remove content inside string literals - only actual comments.
 

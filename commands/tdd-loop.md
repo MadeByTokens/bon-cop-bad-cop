@@ -382,13 +382,15 @@ After test-writer completes, read `.tdd-state.json` to confirm state was updated
 
 **How to strip comments (by language):**
 
-| Language | Remove | Keep |
-|----------|--------|------|
-| Python | `#` comments, `"""` docstrings | `#` inside strings |
-| JavaScript/TypeScript | `//`, `/* */`, `/** JSDoc */` | Inside strings, regex literals |
-| Rust | `//`, `/* */`, `///`, `//!` | Inside string literals |
-| Go | `//`, `/* */` | Inside strings and raw strings |
-| Java | `//`, `/* */`, `/** Javadoc */` | Inside string literals |
+```
+| Language              | Remove                        | Keep                          |
+|-----------------------|-------------------------------|-------------------------------|
+| Python                | # comments, """ docstrings    | # inside strings              |
+| JavaScript/TypeScript | //, /* */, /** JSDoc */       | Inside strings, regex literals|
+| Rust                  | //, /* */, ///, //!           | Inside string literals        |
+| Go                    | //, /* */                     | Inside strings and raw strings|
+| Java                  | //, /* */, /** Javadoc */     | Inside string literals        |
+```
 
 **Process:**
 1. Read `testFilePaths` from `.tdd-state.json`
