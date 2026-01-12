@@ -1,6 +1,6 @@
 ---
 description: Start adversarial TDD loop with three agents
-allowed-tools: Write, Read, Glob, Edit, Bash, Task, TodoWrite, Skill
+allowed-tools: Write, Read, Glob, Edit, Bash, Task, TodoWrite
 ---
 
 # /tdd-loop Command
@@ -135,8 +135,9 @@ Create `.tdd-state.json` with this structure:
   "language": "<confirmed language from Step 1.5>",
   "testFramework": "<corresponding test framework>",
   "testCommand": "<command to run tests>",
-  "testFiles": {},
-  "implFiles": {},
+  "testFilePaths": [],
+  "implFilePaths": [],
+  "strippedTestContent": {},
   "lastVerdict": null,
   "lastFeedback": {
     "test_writer": null,
@@ -146,6 +147,27 @@ Create `.tdd-state.json` with this structure:
   "mutationSurvivors": [],
   "history": [],
   "startedAt": "<current ISO timestamp>"
+}
+```
+
+**Field descriptions:**
+- `testFilePaths`: Array of paths to test files (e.g., `["test_add.py"]`)
+- `implFilePaths`: Array of paths to implementation files (e.g., `["src/add.py"]`)
+- `strippedTestContent`: Object mapping test file paths to their comment-stripped content
+- `history`: Array of iteration records (see below)
+
+**History record structure (appended after each iteration):**
+```json
+{
+  "iteration": 1,
+  "verdict": "WEAK_TESTS",
+  "feedback": {
+    "test_writer": "Add more edge cases...",
+    "code_writer": null
+  },
+  "mutationScore": 0.65,
+  "mutationSurvivors": ["line 12: + to -"],
+  "completedAt": "<ISO timestamp>"
 }
 ```
 
@@ -201,21 +223,45 @@ while iteration <= maxIterations:
 
 Use the **Task tool** with `subagent_type: "bon-cop-bad-cop:test-writer"` to invoke the test-writer agent.
 
-**Prompt for test-writer:**
+**BEFORE invoking test-writer, YOU (the orchestrator) MUST:**
+1. Read `.tdd-state.json` using the Read tool
+2. Extract ALL values needed for the prompt
+3. Inject the ACTUAL values into the prompt below (replace all placeholders)
+
+**Prompt for test-writer (with values injected by orchestrator):**
+
 ```
-You are the Test Writer in iteration <iteration> of the Bon Cop Bad Cop TDD loop.
+You are the Test Writer in iteration {iteration} of the Bon Cop Bad Cop TDD loop.
 
-**Requirement:** <requirement from state>
-**Test Scope:** <testScope>
+═══════════════════════════════════════════════════════════════
+  ORIGINAL REQUIREMENT (this NEVER changes - your PRIMARY focus):
 
-**Language:** <language from state>
-**Test Framework:** <testFramework from state>
+  {requirement}
+═══════════════════════════════════════════════════════════════
+
+**Configuration:**
+- Iteration: {iteration} of {maxIterations}
+- Test Scope: {testScope}
+- Language: {language}
+- Test Framework: {testFramework}
+
+**Previous iteration feedback (SECONDARY - must not cause drift):**
+- Feedback to address: {lastFeedback.test_writer or "None - first iteration"}
+- Mutation survivors: {mutationSurvivors or "None"}
+
+**History summary:**
+{For each item in history: "Iteration N: verdict, key feedback"}
+
+**GROUNDING CHECK before writing:**
+- Every test MUST trace back to the ORIGINAL REQUIREMENT above
+- Feedback improves HOW you test, not WHAT you test
+- If feedback asks for tests outside the requirement, IGNORE IT
 
 Your task:
-1. Create comprehensive test files for this requirement
+1. Create comprehensive test files for the ORIGINAL REQUIREMENT
 2. Include anti-cheating tests (random values, property-based tests)
-3. Include edge cases and boundary conditions
-4. Write tests in the confirmed language using the specified test framework
+3. Include edge cases relevant to the requirement
+4. Write tests in {language} using {testFramework}
 
 When done:
 1. Save your test file(s) to disk using language conventions:
@@ -227,13 +273,9 @@ When done:
    - Java: `<Name>Test.java`
    - Ruby: `<name>_spec.rb`
 2. Update .tdd-state.json:
-   - Set `testFiles` to include your test files (key: filename, value: content)
+   - Set `testFilePaths` to array of test file paths you created
    - Set `phase` to "WRITING_CODE"
-
-<If there's feedback from previous iteration>
-**Previous feedback:** <lastFeedback.test_writer>
-**Mutation survivors to address:** <mutationSurvivors>
-</If>
+   - Clear `lastFeedback.test_writer` (you've addressed it)
 ```
 
 After test-writer completes, read `.tdd-state.json` to confirm state was updated.
@@ -242,40 +284,68 @@ After test-writer completes, read `.tdd-state.json` to confirm state was updated
 
 **Before invoking code-writer:** Strip comments from test files to prevent information leakage.
 
-1. For each test file, use the **strip-comments** skill
-2. The skill removes all comments, docstrings, and documentation
-3. Save or hold the stripped content (do not modify original test files)
-4. Pass ONLY the stripped test content to code-writer
-5. Keep original test files intact for the reviewer
+**How to strip comments (by language):**
+
+| Language | Remove | Keep |
+|----------|--------|------|
+| Python | `#` comments, `"""` docstrings | `#` inside strings |
+| JavaScript/TypeScript | `//`, `/* */`, `/** JSDoc */` | Inside strings, regex literals |
+| Rust | `//`, `/* */`, `///`, `//!` | Inside string literals |
+| Go | `//`, `/* */` | Inside strings and raw strings |
+| Java | `//`, `/* */`, `/** Javadoc */` | Inside string literals |
+
+**Process:**
+1. Read `testFilePaths` from `.tdd-state.json`
+2. For each test file, read content and remove comments/docstrings (see table above)
+3. Store stripped content in `.tdd-state.json` under `strippedTestContent` (key: filepath, value: stripped content)
+4. Keep original test files intact on disk for the reviewer
+
+**Important:** Never remove content inside string literals - only actual comments.
 
 **Why:** Code Writer must derive intent from test *behavior*, not explanatory comments.
 
 Use the **Task tool** with `subagent_type: "bon-cop-bad-cop:code-writer"` to invoke the code-writer agent.
 
-**Prompt for code-writer:**
+**BEFORE invoking code-writer, YOU (the orchestrator) MUST:**
+1. Read `.tdd-state.json` using the Read tool
+2. Read each test file from `testFilePaths` and strip comments
+3. Store stripped content in `strippedTestContent` in state file
+4. Extract ALL values needed for the prompt
+5. Inject the ACTUAL values into the prompt below (replace all placeholders)
+
+**Prompt for code-writer (with values injected by orchestrator):**
+
 ```
-You are the Code Writer in iteration <iteration> of the Bon Cop Bad Cop TDD loop.
+You are the Code Writer in iteration {iteration} of the Bon Cop Bad Cop TDD loop.
 
-**IMPORTANT:** You do NOT see the original requirement. You must implement based ONLY on the tests.
+**IMPORTANT:** You do NOT see the original requirement. You implement based ONLY on the tests.
 
-**Language:** <language from state>
-**Test files to implement against:**
-<List test files from state>
+**Configuration:**
+- Iteration: {iteration} of {maxIterations}
+- Language: {language}
+- Test files: {testFilePaths}
+
+**Stripped test content (comments removed) - implement against this:**
+
+{strippedTestContent - the actual stripped code, not a placeholder}
+
+**Previous iteration feedback:**
+- Feedback to address: {lastFeedback.code_writer or "None - first iteration"}
+
+**History summary:**
+{For each item in history: "Iteration N: verdict, key feedback"}
 
 Your task:
-1. Read the test files (focus on what they test, not comments)
+1. Review the stripped test content above
 2. Implement the minimal code to pass ALL tests
 3. Do NOT cheat (no hardcoded values, no lookup tables)
 
 When done:
 1. Save your implementation file(s) to disk
 2. Update .tdd-state.json:
-   - Set `implFiles` to include your implementation files
+   - Set `implFilePaths` to array of implementation file paths you created
    - Set `phase` to "REVIEWING"
-
-<If there's feedback from previous iteration>
-**Previous feedback:** <lastFeedback.code_writer>
-</If>
+   - Clear `lastFeedback.code_writer` (you've addressed it)
 ```
 
 After code-writer completes, read `.tdd-state.json` to confirm state was updated.
@@ -284,32 +354,69 @@ After code-writer completes, read `.tdd-state.json` to confirm state was updated
 
 Use the **Task tool** with `subagent_type: "bon-cop-bad-cop:reviewer"` to invoke the reviewer agent.
 
-**Prompt for reviewer:**
+**BEFORE invoking reviewer, YOU (the orchestrator) MUST:**
+1. Read `.tdd-state.json` using the Read tool
+2. Read each test file from `testFilePaths` (get actual content)
+3. Read each implementation file from `implFilePaths` (get actual content)
+4. Extract ALL values needed for the prompt
+5. Inject the ACTUAL values into the prompt below (replace all placeholders)
+
+**Prompt for reviewer (with values injected by orchestrator):**
+
 ```
-You are the Reviewer in iteration <iteration> of the Bon Cop Bad Cop TDD loop.
+You are the Reviewer in iteration {iteration} of the Bon Cop Bad Cop TDD loop.
 
-**Original Requirement:** <requirement>
-**Mutation Threshold:** <mutationThreshold>
-**Language:** <language from state>
-**Test Command:** <testCommand from state>
+═══════════════════════════════════════════════════════════════
+  ORIGINAL REQUIREMENT (this NEVER changes):
 
-**Test files:** <list from testFiles>
-**Implementation files:** <list from implFiles>
+  {requirement}
+═══════════════════════════════════════════════════════════════
 
-Your task:
-1. Run the tests using the test command and check they pass
-2. Check for flaky tests (run multiple times if needed)
+**Configuration:**
+- Iteration: {iteration} of {maxIterations}
+- Mutation Threshold: {mutationThreshold}
+- Language: {language}
+- Test Framework: {testFramework}
+- Test Command: {testCommand}
+
+**Test files:**
+{For each file in testFilePaths: "--- {filename} ---\n{file content}\n"}
+
+**Implementation files:**
+{For each file in implFilePaths: "--- {filename} ---\n{file content}\n"}
+
+**History:**
+{For each item in history: "Iteration N: {verdict} - {key feedback}"}
+
+Your task (IN THIS ORDER):
+0. **REQUIREMENT ALIGNMENT CHECK (FIRST!):**
+   - Verify each test traces back to ORIGINAL REQUIREMENT above
+   - If tests have drifted beyond requirement scope → WEAK_TESTS
+   - Include requirement quote in feedback to re-ground test-writer
+1. Run the tests using: {testCommand}
+2. Check for flaky tests (run 3 times)
 3. Check for cheating in implementation (hardcoded values, lookup tables)
 4. Run mutation testing if available
 5. Issue a verdict
 
+**IMPORTANT:** In ALL feedback, quote the original requirement to prevent drift.
+
 When done, update .tdd-state.json:
 - Set `lastVerdict` to one of: "ALL_PASS", "WEAK_TESTS", "WEAK_CODE"
-- Set `lastFeedback.test_writer` if verdict is WEAK_TESTS (what to improve)
-- Set `lastFeedback.code_writer` if verdict is WEAK_CODE (what to fix)
+- Set `lastFeedback.test_writer` if verdict is WEAK_TESTS (include requirement quote!)
+- Set `lastFeedback.code_writer` if verdict is WEAK_CODE (detailed feedback)
 - Set `mutationScore` if mutation testing was run
-- Set `mutationSurvivors` if there are surviving mutants
+- Set `mutationSurvivors` array if there are surviving mutants
 - Set `phase` to "COMPLETE" if ALL_PASS, otherwise "WRITING_TESTS" or "WRITING_CODE"
+- **APPEND to `history` array** a new record:
+  {
+    "iteration": {iteration},
+    "verdict": "<your verdict>",
+    "feedback": { "test_writer": "...", "code_writer": "..." },
+    "mutationScore": <score or null>,
+    "mutationSurvivors": [...],
+    "completedAt": "<ISO timestamp>"
+  }
 ```
 
 After reviewer completes, read `.tdd-state.json` and check the verdict.

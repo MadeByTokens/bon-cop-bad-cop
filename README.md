@@ -215,10 +215,6 @@ bon-cop-bad-cop/
 │   ├── tdd-status.md
 │   ├── cancel-tdd.md
 │   └── help.md
-├── skills/                   # Language-agnostic capabilities
-│   ├── detect-cheating/
-│   ├── detect-flaky/
-│   └── strip-comments/
 └── README.md
 ```
 
@@ -231,44 +227,27 @@ bon-cop-bad-cop/
 - **Cheating Detection** - Identifies hardcoded/lookup table implementations
 - **Flakiness Detection** - Runs tests multiple times
 - **State Persistence** - Loop state saved in `.tdd-state.json`
+- **Requirement Grounding** - Original requirement re-injected every iteration to prevent drift
 
-## Skills
+## Built-in Capabilities
 
-Skills are language-agnostic capabilities that Claude uses automatically. They work for Python, JavaScript, Java, C/C++, Rust, Go, and more.
+The following capabilities are embedded directly in the agents and commands (no external dependencies):
 
-### detect-cheating
-
-Analyzes implementation code for patterns indicating the Code Writer is gaming tests rather than implementing genuine logic.
-
-**Patterns detected:**
+### Cheating Detection (in Reviewer)
+Analyzes implementation code for patterns indicating gaming rather than genuine logic:
 - Hardcoded returns matching test expectations
 - Lookup tables with test inputs as keys
-- Test environment detection
+- Test environment detection (`if 'pytest' in sys.modules`)
 - Excessive conditional chains
 
-**Why it matters:** Without this, the Code Writer could pass all tests with `if input == 2: return 5` style cheating.
+### Flaky Test Detection (in Reviewer)
+Runs test suite 3 times and compares results. Any test with inconsistent outcomes is flagged as flaky and must be fixed before proceeding.
 
----
+### Comment Stripping (in tdd-loop orchestrator)
+Removes comments and docstrings from test files before Code Writer sees them. Supports Python, JavaScript/TypeScript, Rust, Go, Java, and C/C++. This ensures Code Writer derives intent from test *behavior*, not explanatory comments.
 
-### detect-flaky
-
-Runs test suites multiple times to identify non-deterministic tests.
-
-**Supported:** pytest, Jest, Cargo, Go, JUnit (auto-detected)
-
-**Why it matters:** A flaky test will cause false positives in mutation testing.
-
----
-
-### strip-comments
-
-Removes comments and docstrings from test files before Code Writer sees them.
-
-**Supported:** Python, JavaScript, Java, C/C++, Rust, Go, HTML, CSS, and more.
-
-**Why it matters:** Code Writer derives intent from test *behavior*, not explanatory comments.
-
----
+### Requirement Alignment Check (in Reviewer)
+Every iteration, the Reviewer verifies that tests still align with the original requirement. If tests have drifted beyond scope, the loop corrects back to the original requirement.
 
 ## Requirements
 
