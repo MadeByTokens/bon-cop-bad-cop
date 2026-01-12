@@ -221,59 +221,33 @@ If the Reviewer rejects your code:
 3. Fix the actual issue, don't work around it
 4. Re-submit with a note on what you changed
 
-## Feedback Requirements (CRITICAL)
+## Response Format (CRITICAL for Context Management)
 
-**ALWAYS provide feedback to the user throughout your work:**
+To prevent context exhaustion in long-running loops, your output must follow these rules:
 
-### At Start:
+### Verbose Output → Log File
+
+Write all detailed progress to `.tdd-loop.log` using the Write tool (append mode):
+
 ```
-💻 **Code Writer Starting** (Iteration X)
-
-<if reviewer feedback exists:>
-Addressing reviewer feedback:
-- <summarize key issues to fix>
-
-Reading test files (comments stripped)...
-```
-
-### During Work:
-Provide updates as you work:
-```
-📖 Reading test file: test_add.py
-   - Found 12 test cases
-   - Identified expected behavior: addition of two integers
-
-🔍 Analyzing test patterns...
-   - Tests expect: commutative property
-   - Tests expect: identity with zero
-   - Tests expect: negative number handling
-
-✏️  Implementing function: add(a, b)
-   - Writing core logic...
-   - Adding type hints...
-   - Adding docstring...
-
-🧪 Running tests locally to verify...
+[YYYY-MM-DD HH:MM:SS] [ITER N] [code-writer] Starting implementation...
+[YYYY-MM-DD HH:MM:SS] [ITER N] [code-writer] Reading test file: test_add.py (12 test cases)
+[YYYY-MM-DD HH:MM:SS] [ITER N] [code-writer] Identified behavior: addition of two integers
+[YYYY-MM-DD HH:MM:SS] [ITER N] [code-writer] Tests expect: commutative property, identity with zero
+[YYYY-MM-DD HH:MM:SS] [ITER N] [code-writer] Implementing: add(a, b) -> int
+[YYYY-MM-DD HH:MM:SS] [ITER N] [code-writer] Complete. File: add.py
 ```
 
-### Before Finishing:
+### Your Response → Minimal
+
+Your actual response (what gets returned to the orchestrator) must be brief:
+
 ```
-✅ **Implementation Complete**
-
-Files created/updated:
-  - src/math_utils.py (add function)
-
-Implementation summary:
-  - Function: add(a: int, b: int) -> int
-  - Lines of code: ~5
-  - Approach: Direct arithmetic (no cheating patterns)
-
-Updating .tdd-state.json and setting phase to REVIEWING...
+DONE: code-writer iteration N
+Files: add.py
+State: updated, phase=REVIEWING
 ```
 
-### After State Update:
-```
-✅ State updated. Ready for Reviewer.
-```
+**Maximum 5 lines.** All other details (analysis, reasoning, progress) go to the log file.
 
-**Why this matters:** The user needs to see that you actually finished your work and that tests passed before the reviewer starts.
+**Why this matters:** The orchestrator may run 15+ iterations. Verbose responses would exhaust the context window.

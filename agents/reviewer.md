@@ -490,150 +490,47 @@ When you finish, you MUST update `.tdd-state.json`:
 
 The `history` array preserves ALL iteration records so context survives across iterations.
 
-## Feedback Requirements (CRITICAL)
+## Response Format (CRITICAL for Context Management)
 
-**ALWAYS provide detailed feedback for ALL operations, especially long-running ones:**
+To prevent context exhaustion in long-running loops, your output must follow these rules:
 
-### At Start:
+### Verbose Output → Log File
+
+Write ALL detailed progress to `.tdd-loop.log` using the Write tool (append mode). This includes:
+- Test run results (all 3 runs for flaky detection)
+- Cheating detection analysis
+- Mutation testing progress and results
+- Full list of surviving mutants
+- Detailed feedback text
+
+Example log entries:
 ```
-👮 **Reviewer Starting** (Iteration X)
-
-Requirement: <first 80 chars>...
-Files to review:
-  Tests: <list test files>
-  Implementation: <list impl files>
-
-Starting review process...
-```
-
-### Phase 1: Flaky Test Detection
-```
-🔍 **Phase 1: Flaky Test Detection**
-
-Running test suite 3 times to detect flakiness...
-
-Run 1/3...
-  ✓ Completed in X.Xs (Y tests passed)
-
-Run 2/3...
-  ✓ Completed in X.Xs (Y tests passed)
-
-Run 3/3...
-  ✓ Completed in X.Xs (Y tests passed)
-
-Comparing results...
-  <if stable:>
-  ✅ All tests stable across 3 runs
-
-  <if flaky:>
-  ❌ Flaky tests detected:
-    - test_foo: PASS, FAIL, PASS
-    - test_bar: PASS, PASS, FAIL
+[YYYY-MM-DD HH:MM:SS] [ITER N] [reviewer] Starting review...
+[YYYY-MM-DD HH:MM:SS] [ITER N] [reviewer] Flaky detection: Run 1/3 - 12/12 passed
+[YYYY-MM-DD HH:MM:SS] [ITER N] [reviewer] Flaky detection: Run 2/3 - 12/12 passed
+[YYYY-MM-DD HH:MM:SS] [ITER N] [reviewer] Flaky detection: Run 3/3 - 12/12 passed
+[YYYY-MM-DD HH:MM:SS] [ITER N] [reviewer] Flaky detection: All tests stable
+[YYYY-MM-DD HH:MM:SS] [ITER N] [reviewer] Cheating check: No patterns detected
+[YYYY-MM-DD HH:MM:SS] [ITER N] [reviewer] Mutation testing: 25 mutants generated
+[YYYY-MM-DD HH:MM:SS] [ITER N] [reviewer] Mutation testing: 20/25 killed (80%)
+[YYYY-MM-DD HH:MM:SS] [ITER N] [reviewer] Survivors: [line 12: + to -, line 15: < to <=, ...]
+[YYYY-MM-DD HH:MM:SS] [ITER N] [reviewer] Verdict: WEAK_TESTS - mutation score below threshold
+[YYYY-MM-DD HH:MM:SS] [ITER N] [reviewer] Feedback to test-writer: "Add tests to catch: ..."
 ```
 
-### Phase 2: Cheating Detection
-```
-🔍 **Phase 2: Code Quality Analysis**
+### Your Response → Minimal
 
-Scanning for cheating patterns...
-  - Checking for hardcoded returns...
-  - Checking for lookup tables...
-  - Checking for test environment detection...
-  - Checking for input memorization...
-
-<if clean:>
-✅ No cheating patterns detected
-
-<if found:>
-⚠️  Potential issues found:
-  - Line 15: Hardcoded return for specific input
-```
-
-### Phase 3: Mutation Testing
-**IMPORTANT:** This is the longest operation. Provide extensive feedback:
+Your actual response (what gets returned to the orchestrator) must be brief:
 
 ```
-🧬 **Phase 3: Mutation Testing**
-
-This may take several minutes depending on code complexity...
-
-Generating mutants...
-  ✓ Found 25 mutation points
-
-Testing mutants (parallel execution):
-  Progress: [█████░░░░░] 10/25 (40%) - 2 survivors so far
-  Progress: [███████░░░] 15/25 (60%) - 3 survivors so far
-  Progress: [█████████░] 20/25 (80%) - 4 survivors so far
-  Progress: [██████████] 25/25 (100%) - 5 survivors
-
-Mutation Results:
-  Total mutants: 25
-  Killed: 20
-  Survived: 5
-  Mutation Score: 80.0%
-
-<if survivors exist:>
-Surviving mutants (tests didn't catch these bugs):
-  1. Line 12: Changed + to - (test_add_positive didn't fail)
-  2. Line 15: Changed < to <= (test_boundary didn't fail)
-  ... (list all or first 5)
+DONE: reviewer iteration N
+Verdict: WEAK_TESTS
+Tests: 12/12 passed (stable)
+Cheating: none detected
+Mutation: 80% (threshold: 80%)
+State: updated, phase=WRITING_TESTS
 ```
 
-### Phase 4: Final Verdict
-```
-📋 **Final Assessment**
+**Maximum 8 lines.** All other details (test logs, mutation survivors, detailed analysis) go to the log file.
 
-<if ALL_PASS:>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ **VERDICT: ALL_PASS**
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-All checks passed:
-  ✓ Tests are stable (no flakiness)
-  ✓ Tests pass
-  ✓ No cheating patterns detected
-  ✓ Mutation score: X.X% (threshold: Y%)
-
-Updating state with ALL_PASS verdict...
-✅ Loop complete!
-
-<if WEAK_TESTS:>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️  **VERDICT: WEAK_TESTS**
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Issues found:
-<list issues>
-
-Feedback to Test Writer:
-<detailed feedback>
-
-Updating state and sending back to Test Writer...
-
-<if WEAK_CODE:>
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️  **VERDICT: WEAK_CODE**
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Issues found:
-<list issues>
-
-Feedback to Code Writer:
-<detailed feedback>
-
-Updating state and sending back to Code Writer...
-```
-
-### Progress Updates for Long Operations
-
-**For mutation testing specifically**, provide progress updates every 5 mutants or every 10 seconds:
-```
-🧬 Mutation testing in progress...
-   [Current: mutant 8/25 - testing arithmetic operator change on line 12]
-```
-
-**Why this matters:**
-- Mutation testing can take 5-10+ minutes on complex code
-- Users need to know the system hasn't frozen
-- Progress feedback helps users estimate remaining time
-- Detailed results help debug issues when stuck
+**Why this matters:** The orchestrator may run 15+ iterations. Verbose responses would exhaust the context window. The log file preserves all details for debugging.

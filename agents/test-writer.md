@@ -305,51 +305,34 @@ When you finish, you MUST update `.tdd-state.json`:
 
 **Do NOT modify other fields** - only update the ones listed above.
 
-## Feedback Requirements (CRITICAL)
+## Response Format (CRITICAL for Context Management)
 
-**ALWAYS provide feedback to the user throughout your work:**
+To prevent context exhaustion in long-running loops, your output must follow these rules:
 
-### At Start:
+### Verbose Output → Log File
+
+Write all detailed progress to `.tdd-loop.log` using the Write tool (append mode):
+
 ```
-📝 **Test Writer Starting** (Iteration X)
-
-Requirement: <first 80 chars of requirement>...
-Test Scope: <unit/integration/both>
-
-<if reviewer feedback exists:>
-Addressing reviewer feedback:
-- <summarize key points>
-```
-
-### During Work:
-Provide updates as you work:
-```
-📋 Analyzing requirement...
-✏️  Creating test file: test_add.py
-   - Writing happy path tests...
-   - Writing edge case tests...
-   - Writing property-based tests...
+[YYYY-MM-DD HH:MM:SS] [ITER N] [test-writer] Starting test writing...
+[YYYY-MM-DD HH:MM:SS] [ITER N] [test-writer] Analyzing requirement: "<requirement>"
+[YYYY-MM-DD HH:MM:SS] [ITER N] [test-writer] Creating test file: test_add.py
+[YYYY-MM-DD HH:MM:SS] [ITER N] [test-writer] - Happy path tests: 4
+[YYYY-MM-DD HH:MM:SS] [ITER N] [test-writer] - Edge case tests: 5
+[YYYY-MM-DD HH:MM:SS] [ITER N] [test-writer] - Property tests: 3
+[YYYY-MM-DD HH:MM:SS] [ITER N] [test-writer] Complete. Total: 12 test cases
 ```
 
-### Before Finishing:
+### Your Response → Minimal
+
+Your actual response (what gets returned to the orchestrator) must be brief:
+
 ```
-✅ **Test Writing Complete**
-
-Files created:
-  - test_add.py (12 test cases)
-
-Test coverage:
-  - Happy path: 4 tests
-  - Edge cases: 5 tests
-  - Error cases: 2 tests
-  - Properties: 1 test
-
-Updating .tdd-state.json and setting phase to WRITING_CODE...
+DONE: test-writer iteration N
+Files: test_add.py (12 test cases)
+State: updated, phase=WRITING_CODE
 ```
 
-### After State Update:
-```
-✅ State updated. Ready for Code Writer.
-```
+**Maximum 5 lines.** All other details (analysis, reasoning, progress) go to the log file.
 
-**Why this matters:** The user needs to see that you actually finished your work before the next agent starts.
+**Why this matters:** The orchestrator may run 15+ iterations. Verbose responses would exhaust the context window.

@@ -53,8 +53,16 @@ Three-agent adversarial TDD loop where agents keep each other honest.
 
 **Generated Files:**
 
-  .tdd-state.json  - Loop state (iteration, verdict, feedback)
-  .tdd-loop.log    - Trail log of all actions with timestamps
+  .tdd-state.json  - Current loop state (recent 3 iterations only)
+  .tdd-loop.log    - Complete history and detailed output (primary record)
+
+**Context Management:**
+
+  The plugin is optimized for long-running loops (up to 15 iterations).
+  - Agent responses are minimal to preserve context
+  - History is truncated to 3 iterations in state file
+  - Full details are preserved in .tdd-loop.log
+  - Read the log file for debugging and complete history
 
 **More Info:** See README.md for full documentation.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

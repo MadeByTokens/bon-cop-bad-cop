@@ -7,9 +7,16 @@ allowed-tools: Write, Read, Glob, Edit, Bash, Task, TodoWrite
 
 When the user runs `/tdd-loop "<requirement>" [options]` or `/tdd-loop --requirement-file <path> [options]`, follow these instructions:
 
-## Trail Log (REQUIRED)
+## Trail Log (REQUIRED) - Primary Record
 
-**Maintain a detailed log in `.tdd-loop.log` throughout the entire loop.**
+**The `.tdd-loop.log` file is the AUTHORITATIVE record of all loop activity.**
+
+This is critical for context management:
+- **Agents write verbose output here**, not to their responses
+- **Full mutation survivor details** go here, not in state file
+- **Full feedback text** goes here
+- **Archived history entries** go here when truncated from state
+- The state file and agent responses contain only summaries
 
 Every significant action MUST be logged with timestamp. Use the Write tool to append entries.
 
@@ -27,12 +34,15 @@ Every significant action MUST be logged with timestamp. Use the Write tool to ap
 | Phase start | `[ITER {n}] Starting phase: {WRITING_TESTS\|WRITING_CODE\|REVIEWING}` |
 | Agent invoked | `[ITER {n}] Invoking {agent} agent...` |
 | Agent completed | `[ITER {n}] {agent} completed. Files: {list}` |
+| Agent verbose output | `[ITER {n}] [{agent}] {detailed analysis, reasoning, progress}` |
 | Tests run | `[ITER {n}] Tests executed: {passed}/{total} passed` |
 | Flaky detected | `[ITER {n}] Flaky tests found: {list}` |
 | Cheating detected | `[ITER {n}] Cheating patterns found: {list}` |
 | Mutation score | `[ITER {n}] Mutation score: {score}% ({killed}/{total} mutants)` |
-| Verdict issued | `[ITER {n}] Verdict: {verdict}. Feedback: "{summary}"` |
+| Mutation survivors | `[ITER {n}] Surviving mutants: {full list of survivors}` |
+| Verdict issued | `[ITER {n}] Verdict: {verdict}. Feedback: "{full feedback text}"` |
 | Iteration complete | `[ITER {n}] Iteration complete. Next phase: {phase}` |
+| History archived | `[HISTORY] Archived iteration {n}: verdict={v}, mutationScore={s}, survivors=[...]` |
 | Loop complete | `[COMPLETE] Loop finished: {reason}. Total iterations: {n}` |
 | Error | `[ERROR] {error description}` |
 
@@ -60,6 +70,17 @@ Every significant action MUST be logged with timestamp. Use the Write tool to ap
 ```
 
 **IMPORTANT:** Append to the log file, never overwrite. If the file doesn't exist, create it.
+
+## Context Budget Awareness
+
+This loop can run for many iterations (up to 15 by default). To prevent context exhaustion:
+
+1. **Agent responses are minimal** - Detailed output goes to `.tdd-loop.log`, not responses
+2. **History is truncated to 3 iterations** - Older iterations are archived in the log file
+3. **State file stays small** - Only current state and recent history
+4. **If you need historical details** - Read from `.tdd-loop.log`
+
+**Key principle:** The state file contains *current state*; the log file contains *complete history*.
 
 ## Step 1: Parse User Input
 
@@ -225,6 +246,19 @@ Create `.tdd-state.json` with this structure:
 }
 ```
 
+**History Management (Context Preservation):**
+- Keep only the **last 3 iteration records** in the `history` array
+- Before appending a new record, if `history.length >= 3`:
+  1. Log the oldest entry's full details to `.tdd-loop.log` with format:
+     `[YYYY-MM-DD HH:MM:SS] [HISTORY] Archived iteration N: verdict=X, mutationScore=Y, survivors=[...]`
+  2. Remove the oldest entry from the array
+  3. Then append the new record
+- This keeps the state file small while preserving full history in the log
+
+**History Compression for Older Entries:**
+- Current iteration: store full `mutationSurvivors` as array (e.g., `["line 12: + to -", "line 15: < to <="]`)
+- Archived iterations (when logged before removal): convert array to count for the log summary
+
 **After creating the state file, display:**
 "✅ State file created: .tdd-state.json"
 
@@ -330,6 +364,14 @@ When done:
    - Set `testFilePaths` to array of test file paths you created
    - Set `phase` to "WRITING_CODE"
    - Clear `lastFeedback.test_writer` (you've addressed it)
+3. Log verbose progress to `.tdd-loop.log` (analysis, reasoning, detailed progress)
+
+**MINIMAL RESPONSE (Critical for context management):**
+Your response must be brief (max 5 lines). Example:
+  DONE: test-writer iteration 1
+  Files: test_add.py (8 test cases)
+  State: updated, phase=WRITING_CODE
+All verbose output goes to `.tdd-loop.log`, not your response.
 ```
 
 After test-writer completes, read `.tdd-state.json` to confirm state was updated.
@@ -400,6 +442,14 @@ When done:
    - Set `implFilePaths` to array of implementation file paths you created
    - Set `phase` to "REVIEWING"
    - Clear `lastFeedback.code_writer` (you've addressed it)
+3. Log verbose progress to `.tdd-loop.log` (analysis, reasoning, detailed progress)
+
+**MINIMAL RESPONSE (Critical for context management):**
+Your response must be brief (max 5 lines). Example:
+  DONE: code-writer iteration 1
+  Files: add.py
+  State: updated, phase=REVIEWING
+All verbose output goes to `.tdd-loop.log`, not your response.
 ```
 
 After code-writer completes, read `.tdd-state.json` to confirm state was updated.
@@ -455,22 +505,25 @@ Your task (IN THIS ORDER):
 
 **IMPORTANT:** In ALL feedback, quote the original requirement to prevent drift.
 
-When done, update .tdd-state.json:
-- Set `lastVerdict` to one of: "ALL_PASS", "WEAK_TESTS", "WEAK_CODE"
-- Set `lastFeedback.test_writer` if verdict is WEAK_TESTS (include requirement quote!)
-- Set `lastFeedback.code_writer` if verdict is WEAK_CODE (detailed feedback)
-- Set `mutationScore` if mutation testing was run
-- Set `mutationSurvivors` array if there are surviving mutants
-- Set `phase` to "COMPLETE" if ALL_PASS, otherwise "WRITING_TESTS" or "WRITING_CODE"
-- **APPEND to `history` array** a new record:
-  {
-    "iteration": {iteration},
-    "verdict": "<your verdict>",
-    "feedback": { "test_writer": "...", "code_writer": "..." },
-    "mutationScore": <score or null>,
-    "mutationSurvivors": [...],
-    "completedAt": "<ISO timestamp>"
-  }
+When done:
+1. Update .tdd-state.json:
+   - Set `lastVerdict` to one of: "ALL_PASS", "WEAK_TESTS", "WEAK_CODE"
+   - Set `lastFeedback.test_writer` if verdict is WEAK_TESTS (include requirement quote!)
+   - Set `lastFeedback.code_writer` if verdict is WEAK_CODE (detailed feedback)
+   - Set `mutationScore` if mutation testing was run
+   - Set `mutationSurvivors` array if there are surviving mutants
+   - Set `phase` to "COMPLETE" if ALL_PASS, otherwise "WRITING_TESTS" or "WRITING_CODE"
+   - **APPEND to `history` array** (but first archive oldest if length >= 3, see History Management above)
+2. Log verbose progress to `.tdd-loop.log` (test runs, mutation details, analysis)
+
+**MINIMAL RESPONSE (Critical for context management):**
+Your response must be brief (max 8 lines). Example:
+  DONE: reviewer iteration 1
+  Verdict: WEAK_TESTS
+  Tests: 8/8 passed
+  Mutation: 72% (below 80% threshold)
+  State: updated, phase=WRITING_TESTS
+All verbose output (test logs, mutation survivors, detailed analysis) goes to `.tdd-loop.log`, not your response.
 ```
 
 After reviewer completes, read `.tdd-state.json` and check the verdict.

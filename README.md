@@ -229,6 +229,7 @@ bon-cop-bad-cop/
 - **State Persistence** - Loop state saved in `.tdd-state.json`
 - **Requirement Grounding** - Original requirement re-injected every iteration to prevent drift
 - **Trail Log** - Detailed audit log in `.tdd-loop.log` for debugging and verification
+- **Context Management** - Optimized for long-running loops (up to 15 iterations) without exhausting context window
 
 ## Built-in Capabilities
 
@@ -249,6 +250,12 @@ Removes comments and docstrings from test files before Code Writer sees them. Su
 
 ### Requirement Alignment Check (in Reviewer)
 Every iteration, the Reviewer verifies that tests still align with the original requirement. If tests have drifted beyond scope, the loop corrects back to the original requirement.
+
+### Context Management (in all agents and orchestrator)
+The plugin is designed for long-running loops without exhausting the context window:
+- **Minimal agent responses** - Agents write verbose output to `.tdd-loop.log` and return only brief confirmations
+- **History truncation** - Only the 3 most recent iterations are kept in `.tdd-state.json`; older iterations are archived to the log file
+- **Log as primary record** - The `.tdd-loop.log` file contains complete history, mutation survivors, and detailed analysis
 
 ## Requirements
 
