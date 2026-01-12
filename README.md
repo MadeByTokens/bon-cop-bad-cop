@@ -10,12 +10,32 @@ Three-agent adversarial TDD loop: Test Writer (bad cop), Code Writer (suspect), 
 
 See https://github.com/MadeByTokens/claude-code-plugins-madebytokens
 
-### Option B: Direct Install
+### Option B: CLI Flag at Launch
 
 ```bash
-# Clone and install directly
+# Clone the repo
 git clone https://github.com/MadeByTokens/bon-cop-bad-cop.git
-/plugin install ./bon-cop-bad-cop
+
+# Launch Claude Code with the plugin directory
+claude --plugin-dir /path/to/bon-cop-bad-cop
+```
+
+### Option C: Manual Settings Configuration
+
+Clone the repo, then add it to your Claude Code settings file:
+
+**User scope** (`~/.claude/settings.json`):
+```json
+{
+  "pluginDirs": ["/path/to/bon-cop-bad-cop"]
+}
+```
+
+**Project scope** (`.claude/settings.json` in your project):
+```json
+{
+  "pluginDirs": ["/path/to/bon-cop-bad-cop"]
+}
 ```
 
 ## Quick Start
@@ -280,14 +300,9 @@ cargo install cargo-mutants
 
 ### "Unknown slash command: tdd-loop"
 
-Make sure the plugin is installed:
-```bash
-# Check installed plugins
-/plugin list
-
-# If not installed:
-/plugin install /path/to/bon-cop-bad-cop
-```
+Make sure the plugin is loaded. Either:
+- Restart Claude Code with `claude --plugin-dir /path/to/bon-cop-bad-cop`
+- Or add `pluginDirs` to your settings.json (see Installation above)
 
 ### Loop stops after first agent
 
