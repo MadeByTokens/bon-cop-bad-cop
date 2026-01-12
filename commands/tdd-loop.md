@@ -28,6 +28,7 @@ Every significant action MUST be logged with timestamp. Use the Write tool to ap
 **What to log:**
 | Event | Log Entry |
 |-------|-----------|
+| Plugin version | `[INIT] Bon Cop Bad Cop v{version}` |
 | Loop start | `[INIT] TDD loop started. Requirement: "<first 100 chars>..."` |
 | Language detected | `[INIT] Language detected: {language} ({testFramework})` |
 | State file created | `[INIT] State file created: .tdd-state.json` |
@@ -48,6 +49,7 @@ Every significant action MUST be logged with timestamp. Use the Write tool to ap
 
 **Example log:**
 ```
+[2024-01-15 10:30:00] [INIT] Bon Cop Bad Cop v0.5.5
 [2024-01-15 10:30:00] [INIT] TDD loop started. Requirement: "Write a function is_prime(n) that returns True if n is prime"
 [2024-01-15 10:30:01] [INIT] Language detected: python (pytest)
 [2024-01-15 10:30:02] [INIT] State file created: .tdd-state.json
@@ -107,6 +109,17 @@ After EVERY agent completes, you MUST:
 | `iteration > maxIterations` | Display max iterations, STOP |
 
 **CRITICAL: Do NOT stop after an agent completes unless an exit condition is met.**
+
+## Step 0: Log Plugin Version
+
+**FIRST**, before doing anything else:
+
+1. Log to `.tdd-loop.log`: `[INIT] Bon Cop Bad Cop v0.5.5`
+2. Display: "🎭 Bon Cop Bad Cop v0.5.5"
+
+This ensures the version is always recorded for debugging purposes.
+
+**Note:** When bumping the plugin version, update both `.claude-plugin/plugin.json` AND this file.
 
 ## Step 1: Parse User Input
 
