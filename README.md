@@ -228,6 +228,7 @@ bon-cop-bad-cop/
 - **Flakiness Detection** - Runs tests multiple times
 - **State Persistence** - Loop state saved in `.tdd-state.json`
 - **Requirement Grounding** - Original requirement re-injected every iteration to prevent drift
+- **Trail Log** - Detailed audit log in `.tdd-loop.log` for debugging and verification
 
 ## Built-in Capabilities
 

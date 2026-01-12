@@ -51,6 +51,11 @@ Three-agent adversarial TDD loop where agents keep each other honest.
 
   Loop continues until ALL_PASS or max iterations reached.
 
+**Generated Files:**
+
+  .tdd-state.json  - Loop state (iteration, verdict, feedback)
+  .tdd-loop.log    - Trail log of all actions with timestamps
+
 **More Info:** See README.md for full documentation.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```

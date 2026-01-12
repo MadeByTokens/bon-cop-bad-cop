@@ -7,6 +7,60 @@ allowed-tools: Write, Read, Glob, Edit, Bash, Task, TodoWrite
 
 When the user runs `/tdd-loop "<requirement>" [options]` or `/tdd-loop --requirement-file <path> [options]`, follow these instructions:
 
+## Trail Log (REQUIRED)
+
+**Maintain a detailed log in `.tdd-loop.log` throughout the entire loop.**
+
+Every significant action MUST be logged with timestamp. Use the Write tool to append entries.
+
+**Log format:**
+```
+[YYYY-MM-DD HH:MM:SS] [PHASE] Message
+```
+
+**What to log:**
+| Event | Log Entry |
+|-------|-----------|
+| Loop start | `[INIT] TDD loop started. Requirement: "<first 100 chars>..."` |
+| Language detected | `[INIT] Language detected: {language} ({testFramework})` |
+| State file created | `[INIT] State file created: .tdd-state.json` |
+| Phase start | `[ITER {n}] Starting phase: {WRITING_TESTS\|WRITING_CODE\|REVIEWING}` |
+| Agent invoked | `[ITER {n}] Invoking {agent} agent...` |
+| Agent completed | `[ITER {n}] {agent} completed. Files: {list}` |
+| Tests run | `[ITER {n}] Tests executed: {passed}/{total} passed` |
+| Flaky detected | `[ITER {n}] Flaky tests found: {list}` |
+| Cheating detected | `[ITER {n}] Cheating patterns found: {list}` |
+| Mutation score | `[ITER {n}] Mutation score: {score}% ({killed}/{total} mutants)` |
+| Verdict issued | `[ITER {n}] Verdict: {verdict}. Feedback: "{summary}"` |
+| Iteration complete | `[ITER {n}] Iteration complete. Next phase: {phase}` |
+| Loop complete | `[COMPLETE] Loop finished: {reason}. Total iterations: {n}` |
+| Error | `[ERROR] {error description}` |
+
+**Example log:**
+```
+[2024-01-15 10:30:00] [INIT] TDD loop started. Requirement: "Write a function is_prime(n) that returns True if n is prime"
+[2024-01-15 10:30:01] [INIT] Language detected: python (pytest)
+[2024-01-15 10:30:02] [INIT] State file created: .tdd-state.json
+[2024-01-15 10:30:03] [ITER 1] Starting phase: WRITING_TESTS
+[2024-01-15 10:30:04] [ITER 1] Invoking test-writer agent...
+[2024-01-15 10:31:15] [ITER 1] test-writer completed. Files: test_is_prime.py
+[2024-01-15 10:31:16] [ITER 1] Starting phase: WRITING_CODE
+[2024-01-15 10:31:17] [ITER 1] Stripping comments from test files...
+[2024-01-15 10:31:18] [ITER 1] Invoking code-writer agent...
+[2024-01-15 10:32:00] [ITER 1] code-writer completed. Files: is_prime.py
+[2024-01-15 10:32:01] [ITER 1] Starting phase: REVIEWING
+[2024-01-15 10:32:02] [ITER 1] Invoking reviewer agent...
+[2024-01-15 10:32:30] [ITER 1] Tests executed: 12/12 passed
+[2024-01-15 10:32:45] [ITER 1] Mutation score: 65% (13/20 mutants killed)
+[2024-01-15 10:32:46] [ITER 1] Verdict: WEAK_TESTS. Feedback: "Mutation score below threshold. Survivors: [line 5: changed < to <=]"
+[2024-01-15 10:32:47] [ITER 1] Iteration complete. Next phase: WRITING_TESTS
+[2024-01-15 10:32:48] [ITER 2] Starting phase: WRITING_TESTS
+...
+[2024-01-15 10:45:00] [COMPLETE] Loop finished: ALL_PASS. Total iterations: 3
+```
+
+**IMPORTANT:** Append to the log file, never overwrite. If the file doesn't exist, create it.
+
 ## Step 1: Parse User Input
 
 Extract from the command:
