@@ -313,6 +313,26 @@ Use /tdd-status to check progress, /cancel-tdd to stop.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
+**Initialize the todo list to track loop progress:**
+
+Use TodoWrite with the following todos:
+```json
+[
+  {
+    "content": "TDD Loop: Run iteration 1",
+    "activeForm": "Running TDD iteration 1",
+    "status": "in_progress"
+  },
+  {
+    "content": "TDD Loop: Check verdict and continue until ALL_PASS",
+    "activeForm": "Checking verdict and continuing loop",
+    "status": "pending"
+  }
+]
+```
+
+This todo list serves as a **forcing function** - the pending "Check verdict" task reminds you that the loop must continue until ALL_PASS or max iterations.
+
 ## Step 5: Run the TDD Loop
 
 **CRITICAL:** You must orchestrate the loop yourself by invoking agents sequentially using the Task tool. Do NOT rely on any external hooks or automation.
@@ -586,6 +606,73 @@ After reading the state file, follow this decision table:
 ```
 
 **YOU MUST NOT STOP after the reviewer unless `lastVerdict` is `"ALL_PASS"` or `iteration > maxIterations`.**
+
+**Update the todo list based on verdict:**
+
+After checking the verdict, update the todos using TodoWrite:
+
+**If WEAK_TESTS or WEAK_CODE (continuing to next iteration):**
+```json
+[
+  {
+    "content": "TDD Loop: Run iteration <previous>",
+    "activeForm": "Running TDD iteration <previous>",
+    "status": "completed"
+  },
+  {
+    "content": "TDD Loop: Run iteration <next>",
+    "activeForm": "Running TDD iteration <next>",
+    "status": "in_progress"
+  },
+  {
+    "content": "TDD Loop: Check verdict and continue until ALL_PASS",
+    "activeForm": "Checking verdict and continuing loop",
+    "status": "pending"
+  }
+]
+```
+
+**If ALL_PASS (loop complete):**
+```json
+[
+  {
+    "content": "TDD Loop: Run iteration <final>",
+    "activeForm": "Running TDD iteration <final>",
+    "status": "completed"
+  },
+  {
+    "content": "TDD Loop: Check verdict and continue until ALL_PASS",
+    "activeForm": "Checking verdict and continuing loop",
+    "status": "completed"
+  },
+  {
+    "content": "TDD Loop: SUCCESS - All tests pass!",
+    "activeForm": "TDD Loop completed successfully",
+    "status": "completed"
+  }
+]
+```
+
+**If max iterations reached:**
+```json
+[
+  {
+    "content": "TDD Loop: Run iteration <final>",
+    "activeForm": "Running TDD iteration <final>",
+    "status": "completed"
+  },
+  {
+    "content": "TDD Loop: Check verdict and continue until ALL_PASS",
+    "activeForm": "Checking verdict and continuing loop",
+    "status": "completed"
+  },
+  {
+    "content": "TDD Loop: Max iterations reached without ALL_PASS",
+    "activeForm": "TDD Loop ended at max iterations",
+    "status": "completed"
+  }
+]
+```
 
 ## Step 6: Handle Loop Completion
 
