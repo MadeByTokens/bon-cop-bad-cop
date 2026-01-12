@@ -304,12 +304,14 @@ Make sure the plugin is loaded. Either:
 - Restart Claude Code with `claude --plugin-dir /path/to/bon-cop-bad-cop`
 - Or add `pluginDirs` to your settings.json (see Installation above)
 
-### Loop stops after first agent
+### Loop stops unexpectedly
 
-This is expected if the Task tool invocations aren't working correctly. Check:
-- `.tdd-state.json` has `"active": true`
-- All agent files exist in `agents/`
-- Run `/bon-cop-bad-cop:tdd-status` to see current state
+If the loop stops before reaching ALL_PASS or max iterations:
+1. Check `.tdd-state.json` - verify `"active": true` and check `lastVerdict`
+2. Check `.tdd-loop.log` for error messages or the last recorded action
+3. Run `/bon-cop-bad-cop:tdd-status` to see current state
+4. The loop should continue automatically after each verdict unless ALL_PASS or max iterations reached
+5. If it stops mid-loop, try running `/bon-cop-bad-cop:tdd-loop` again - it will detect the active state
 
 ### Tests not running / Mutation testing skipped
 

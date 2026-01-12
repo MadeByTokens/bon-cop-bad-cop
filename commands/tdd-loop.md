@@ -82,6 +82,32 @@ This loop can run for many iterations (up to 15 by default). To prevent context 
 
 **Key principle:** The state file contains *current state*; the log file contains *complete history*.
 
+## Loop Continuation Protocol (MANDATORY)
+
+**YOU MUST KEEP THE LOOP RUNNING until an exit condition is met.**
+
+After EVERY agent completes, you MUST:
+1. Read `.tdd-state.json` immediately
+2. Display the progress banner
+3. Check `lastVerdict` and `phase`
+4. **CONTINUE to the next appropriate phase - DO NOT STOP**
+5. Only stop when: `lastVerdict == "ALL_PASS"` OR `iteration > maxIterations`
+
+**Exit conditions (ONLY these allow you to stop):**
+- `lastVerdict` is `"ALL_PASS"` → Display completion message and stop
+- `iteration > maxIterations` → Display max iterations message and stop
+
+**If neither exit condition is met, you MUST continue the loop.**
+
+| Current State | Action |
+|---------------|--------|
+| `lastVerdict: "WEAK_TESTS"` | Increment iteration, invoke test-writer |
+| `lastVerdict: "WEAK_CODE"` | Increment iteration, invoke code-writer |
+| `lastVerdict: "ALL_PASS"` | Display completion, STOP |
+| `iteration > maxIterations` | Display max iterations, STOP |
+
+**CRITICAL: Do NOT stop after an agent completes unless an exit condition is met.**
+
 ## Step 1: Parse User Input
 
 Extract from the command:
@@ -376,6 +402,8 @@ All verbose output goes to `.tdd-loop.log`, not your response.
 
 After test-writer completes, read `.tdd-state.json` to confirm state was updated.
 
+**CRITICAL: DO NOT STOP HERE. Immediately proceed to Phase 2 (Code Writer).**
+
 ### Phase 2: Code Writer
 
 **Before invoking code-writer:** Strip comments from test files to prevent information leakage.
@@ -456,6 +484,8 @@ All verbose output goes to `.tdd-loop.log`, not your response.
 
 After code-writer completes, read `.tdd-state.json` to confirm state was updated.
 
+**CRITICAL: DO NOT STOP HERE. Immediately proceed to Phase 3 (Reviewer).**
+
 ### Phase 3: Reviewer
 
 Use the **Task tool** with `subagent_type: "bon-cop-bad-cop:reviewer"` to invoke the reviewer agent.
@@ -529,6 +559,33 @@ All verbose output (test logs, mutation survivors, detailed analysis) goes to `.
 ```
 
 After reviewer completes, read `.tdd-state.json` and check the verdict.
+
+### After Reviewer - MANDATORY Loop Continuation
+
+**CRITICAL: You MUST check the verdict and continue the loop. DO NOT STOP unless exit condition is met.**
+
+After reading the state file, follow this decision table:
+
+| `lastVerdict` | `iteration` | Action |
+|---------------|-------------|--------|
+| `"ALL_PASS"` | any | Go to Step 6 (completion message), then STOP |
+| `"WEAK_TESTS"` | `<= maxIterations` | Increment `iteration` in state file, display progress banner, **GO BACK TO Phase 1 (test-writer)** |
+| `"WEAK_CODE"` | `<= maxIterations` | Increment `iteration` in state file, display progress banner, **GO BACK TO Phase 2 (code-writer)** |
+| any | `> maxIterations` | Go to Step 6 (max iterations message), then STOP |
+
+**Example continuation flow:**
+```
+1. Reviewer completes with verdict: WEAK_TESTS
+2. Read state file → lastVerdict: "WEAK_TESTS", iteration: 2
+3. Check: Is lastVerdict "ALL_PASS"? NO
+4. Check: Is iteration > maxIterations? NO (2 <= 15)
+5. Action: Increment iteration to 3, update state file
+6. Display: "🎭 Iteration 3/15 - Phase: WRITING_TESTS"
+7. GO BACK TO Phase 1 and invoke test-writer
+8. REPEAT until ALL_PASS or max iterations
+```
+
+**YOU MUST NOT STOP after the reviewer unless `lastVerdict` is `"ALL_PASS"` or `iteration > maxIterations`.**
 
 ## Step 6: Handle Loop Completion
 
