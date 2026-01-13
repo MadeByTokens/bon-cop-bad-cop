@@ -53,8 +53,9 @@ Three-agent adversarial TDD loop where agents keep each other honest.
 
 **Generated Files:**
 
-  .tdd-state.json  - Current loop state (recent 3 iterations only)
-  .tdd-loop.log    - Complete history and detailed output (primary record)
+  .tdd-working/          - Working directory with state and agent I/O
+    └── state.json       - Current loop state (recent 3 iterations only)
+  .tdd-loop.log          - Complete history and detailed output (primary record)
 
 **Context Management:**
 

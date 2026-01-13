@@ -235,6 +235,8 @@ bon-cop-bad-cop/
 │   ├── tdd-status.md
 │   ├── cancel-tdd.md
 │   └── help.md
+├── examples/                 # Example requirements
+│   └── parse_duration_requirement.md
 └── README.md
 ```
 
@@ -246,7 +248,7 @@ bon-cop-bad-cop/
 - **Mutation Testing** - Ensures tests actually catch bugs
 - **Cheating Detection** - Identifies hardcoded/lookup table implementations
 - **Flakiness Detection** - Runs tests multiple times
-- **State Persistence** - Loop state saved in `.tdd-state.json`
+- **State Persistence** - Loop state saved in `.tdd-working/state.json`
 - **Requirement Grounding** - Original requirement re-injected every iteration to prevent drift
 - **Trail Log** - Detailed audit log in `.tdd-loop.log` for debugging and verification
 - **Context Management** - Optimized for long-running loops (up to 15 iterations) without exhausting context window
@@ -265,8 +267,8 @@ Analyzes implementation code for patterns indicating gaming rather than genuine 
 ### Flaky Test Detection (in Reviewer)
 Runs test suite 3 times and compares results. Any test with inconsistent outcomes is flagged as flaky and must be fixed before proceeding.
 
-### Comment Stripping (in tdd-loop orchestrator)
-Removes comments and docstrings from test files before Code Writer sees them. Supports Python, JavaScript/TypeScript, Rust, Go, Java, and C/C++. This ensures Code Writer derives intent from test *behavior*, not explanatory comments.
+### Comment Stripping (in Code Writer agent)
+The Code Writer strips comments and docstrings from test files before implementing. Supports Python, JavaScript/TypeScript, Rust, Go, Java, and C/C++. This ensures Code Writer derives intent from test *behavior*, not explanatory comments.
 
 ### Requirement Alignment Check (in Reviewer)
 Every iteration, the Reviewer verifies that tests still align with the original requirement. If tests have drifted beyond scope, the loop corrects back to the original requirement.
