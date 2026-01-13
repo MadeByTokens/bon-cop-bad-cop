@@ -1,6 +1,6 @@
 ---
 description: Display current TDD loop status
-allowed-tools: Read(.tdd-state.json:*)
+allowed-tools: Read
 ---
 
 # /tdd-status Command
@@ -9,7 +9,7 @@ When the user runs `/tdd-status`, follow these instructions:
 
 ## Step 1: Read State File
 
-Try to read `.tdd-state.json`:
+Try to read `.tdd-working/state.json`:
 
 - **If file doesn't exist:**
   Display:
@@ -18,7 +18,7 @@ Try to read `.tdd-state.json`:
 
   Status: No active loop
 
-  No .tdd-state.json found in current directory.
+  No .tdd-working/state.json found in current directory.
 
   To start a new loop: /tdd-loop "Your requirement here"
   ```
@@ -31,9 +31,8 @@ Extract from the state file:
 - `iteration` - current iteration number
 - `maxIterations` - maximum allowed iterations
 - `phase` - current phase (WRITING_TESTS/WRITING_CODE/REVIEWING)
-- `requirement` - the original requirement
-- `testFiles` - object mapping file paths to content
-- `implFiles` - object mapping file paths to content
+- `testFilePaths` - array of test file paths
+- `implFilePaths` - array of implementation file paths
 - `lastVerdict` - most recent verdict (WEAK_TESTS/WEAK_CODE/ALL_PASS)
 - `lastFeedback` - feedback object
 - `mutationScore` - mutation testing score (if available)
@@ -55,14 +54,13 @@ Status: <if active: "🟢 Active" else: "🔴 Inactive (<stoppedReason>)">
 Iteration: <iteration> / <maxIterations>
 Current Phase: <phase>
 
-Requirement:
-  <requirement - first 120 chars><if longer: "...">
+Requirement: (see .tdd-working/inputs/requirement.md)
 
 Files Generated:
-  Tests (<number of testFiles>):
+  Tests (<number of testFilePaths>):
     <list each test file path with "  - " prefix>
 
-  Implementation (<number of implFiles>):
+  Implementation (<number of implFilePaths>):
     <list each impl file path with "  - " prefix>
 
 Last Verdict: <lastVerdict or "None yet">
@@ -84,7 +82,8 @@ Last Feedback:
 <end if>
 
 Duration: <calculate time from startedAt to (completedAt or now)>
-State file: .tdd-state.json
+Working directory: .tdd-working/
+State file: .tdd-working/state.json
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```

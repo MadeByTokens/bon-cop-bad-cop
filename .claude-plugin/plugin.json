@@ -1,6 +1,6 @@
 {
   "name": "bon-cop-bad-cop",
-  "version": "0.5.6",
+  "version": "0.6.0",
   "description": "Three-agent adversarial TDD loop: Test Writer (bad cop), Code Writer (suspect), and Reviewer (good cop) work together while keeping each other honest",
   "author": {
     "name": "MadeByTokens"

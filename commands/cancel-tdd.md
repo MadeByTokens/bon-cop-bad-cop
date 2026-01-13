@@ -1,6 +1,6 @@
 ---
 description: Cancel the active TDD loop
-allowed-tools: Read(.tdd-state.json:*), Write(.tdd-state.json:*)
+allowed-tools: Read, Write
 ---
 
 # /cancel-tdd Command
@@ -9,7 +9,7 @@ When the user runs `/cancel-tdd`, follow these instructions:
 
 ## Step 1: Check for Active Loop
 
-Try to read `.tdd-state.json`:
+Try to read `.tdd-working/state.json`:
 
 - **If file doesn't exist:**
   - Display: "No TDD loop state found. Use `/tdd-loop` to start a new loop."
@@ -22,7 +22,7 @@ Try to read `.tdd-state.json`:
 
 ## Step 2: Cancel the Loop
 
-Update `.tdd-state.json` by setting:
+Update `.tdd-working/state.json` by setting:
 - `active`: false
 - `completedAt`: <current ISO timestamp>
 - `stoppedReason`: "cancelled_by_user"
@@ -39,17 +39,17 @@ Display:
 Completed: <iteration> iteration(s)
 
 Generated Files:
-  Tests (<count of testFiles>):
+  Tests (<count of testFilePaths>):
     <list each test file path>
 
-  Implementation (<count of implFiles>):
+  Implementation (<count of implFilePaths>):
     <list each impl file path>
 
 Last Phase: <phase>
 Last Verdict: <lastVerdict or "None">
 
-State file preserved at: .tdd-state.json
-You can review it or delete it manually.
+Working directory preserved at: .tdd-working/
+You can review it or delete it manually (rm -rf .tdd-working).
 ```
 
 **Note:** Files created during the loop remain in your project. Review and modify them as needed.
